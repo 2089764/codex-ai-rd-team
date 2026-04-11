@@ -2,29 +2,27 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import os
+import shutil
 import sys
 from pathlib import Path
-from typing import Any
 
 from orchestrator.agent_dispatcher import AgentDispatcher
+from orchestrator.agent_clients import CodexAgentClient, EchoAgentClient
 from orchestrator.coordinator import Coordinator
+from orchestrator.message_bus import MessageBus
 from orchestrator.planner import build_work_queue
+from orchestrator.mode_classifier import classify_mode
 from orchestrator.profiles import load_tech_profiles, resolve_tech_profile
 from orchestrator.prompts import load_role_prompts, render_role_prompt
 from orchestrator.runtime_models import RuntimeState
 from orchestrator.runtime_store import RuntimeStore
+from orchestrator.workflow import build_role_flow
 
 try:  # optional runtime dependency in this sandbox
     import typer
 except ModuleNotFoundError:  # pragma: no cover
     typer = None
-
-
-class EchoAgentClient:
-    def run(self, *, role: str, prompt: str, context: dict[str, Any]) -> str:
-        _ = context
-        tail = prompt.splitlines()[-1] if prompt else ""
-        return f"[{role}] {tail}".strip()
 
 
 def _build_prompt_renderer(prompts: dict[str, str]):
@@ -40,37 +38,99 @@ def _build_prompt_renderer(prompts: dict[str, str]):
     return renderer
 
 
-def run_orchestration(*, objective: str, profile: str | None, runtime_dir: str) -> int:
+def _apply_mode_flow(queue, *, mode: str, has_frontend: bool):
+    flow = build_role_flow(mode=mode, has_frontend=has_frontend)
+    flow_order = {role_name: index for index, role_name in enumerate(flow)}
+
+    indexed_items = [
+        (index, item)
+        for index, item in enumerate(queue)
+        if item.role.value in flow_order
+    ]
+    indexed_items.sort(key=lambda pair: (flow_order[pair[1].role.value], pair[0]))
+    return [item for _, item in indexed_items]
+
+
+def _create_agent_client(
+    *,
+    agent_client: str,
+    codex_bin: str,
+    codex_model: str | None,
+    workdir: str,
+):
+    resolved_codex_bin = _resolve_executable(codex_bin)
+
+    if agent_client == "echo":
+        return EchoAgentClient()
+    if agent_client == "codex":
+        if not resolved_codex_bin:
+            raise RuntimeError(f"codex executable not found: {codex_bin}")
+        return CodexAgentClient(binary=resolved_codex_bin, model=codex_model, workdir=workdir)
+
+    # auto
+    if resolved_codex_bin:
+        return CodexAgentClient(binary=resolved_codex_bin, model=codex_model, workdir=workdir)
+    return EchoAgentClient()
+
+
+def _resolve_executable(binary: str) -> str | None:
+    if os.path.sep in binary:
+        path = Path(binary)
+        return str(path) if path.exists() else None
+    return shutil.which(binary)
+
+
+def run_orchestration(
+    *,
+    objective: str,
+    profile: str | None,
+    runtime_dir: str,
+    agent_client: str = "auto",
+    codex_bin: str = "codex",
+    codex_model: str | None = None,
+) -> int:
     catalog = load_tech_profiles()
     resolved = resolve_tech_profile(catalog, explicit=profile, text=objective)
+    mode = classify_mode(objective)
+    has_frontend = bool(resolved.data.get("has_frontend", False))
     queue = build_work_queue(profile=resolved, objective=objective)
+    queue = _apply_mode_flow(queue, mode=mode, has_frontend=has_frontend)
 
-    run_id = dt.datetime.now(dt.UTC).strftime("run-%Y%m%d%H%M%S")
+    run_id = dt.datetime.now(dt.UTC).strftime("run-%Y%m%d%H%M%S%f")
     state = RuntimeState(
         run_id=run_id,
         profile_name=resolved.name,
         objective=objective,
         queue=queue,
         shared_context={
+            "mode": mode,
             "resolved_stack": resolved.data.get("resolved_stack", {}),
         },
     )
 
     prompts = load_role_prompts()
+    project_root = str(Path(__file__).resolve().parents[1])
     dispatcher = AgentDispatcher(
-        client=EchoAgentClient(),
+        client=_create_agent_client(
+            agent_client=agent_client,
+            codex_bin=codex_bin,
+            codex_model=codex_model,
+            workdir=project_root,
+        ),
         prompt_renderer=_build_prompt_renderer(prompts),
     )
     store = RuntimeStore(Path(runtime_dir))
+    message_bus = MessageBus(Path(runtime_dir) / "inboxes")
     coordinator = Coordinator(
         dispatcher=dispatcher,
         store=store,
-        has_frontend=bool(resolved.data.get("has_frontend", False)),
+        has_frontend=has_frontend,
+        message_bus=message_bus,
     )
 
     final_state = coordinator.run(state)
     print(
-        f"run_id={final_state.run_id} profile={final_state.profile_name} "
+        f"run_id={final_state.run_id} mode={mode} profile={final_state.profile_name} "
         f"status={final_state.status.value} steps={final_state.step_cursor}"
     )
     return 0 if final_state.status.value == "completed" else 1
@@ -89,6 +149,24 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default=str(Path(__file__).resolve().parents[1] / "runtime"),
         help="runtime state directory",
     )
+    orchestrate.add_argument(
+        "--agent-client",
+        choices=("auto", "codex", "echo"),
+        default="auto",
+        help="agent client backend",
+    )
+    orchestrate.add_argument(
+        "--codex-bin",
+        required=False,
+        default="codex",
+        help="codex executable path",
+    )
+    orchestrate.add_argument(
+        "--codex-model",
+        required=False,
+        default=None,
+        help="codex model name",
+    )
     return parser
 
 
@@ -105,6 +183,9 @@ def main(argv: list[str] | None = None) -> int:
             objective=args.objective,
             profile=args.profile,
             runtime_dir=args.runtime_dir,
+            agent_client=args.agent_client,
+            codex_bin=args.codex_bin,
+            codex_model=args.codex_model,
         )
     except Exception as exc:  # pragma: no cover
         print(f"error: {exc}", file=sys.stderr)
@@ -122,8 +203,27 @@ if typer is not None:  # pragma: no cover
             str(Path(__file__).resolve().parents[1] / "runtime"),
             help="runtime state directory",
         ),
+        agent_client: str = typer.Option(
+            "auto",
+            help="agent client backend: auto/codex/echo",
+        ),
+        codex_bin: str = typer.Option(
+            "codex",
+            help="codex executable path",
+        ),
+        codex_model: str | None = typer.Option(
+            None,
+            help="codex model name",
+        ),
     ):
-        code = run_orchestration(objective=objective, profile=profile, runtime_dir=runtime_dir)
+        code = run_orchestration(
+            objective=objective,
+            profile=profile,
+            runtime_dir=runtime_dir,
+            agent_client=agent_client,
+            codex_bin=codex_bin,
+            codex_model=codex_model,
+        )
         raise typer.Exit(code=code)
 else:
     app = None

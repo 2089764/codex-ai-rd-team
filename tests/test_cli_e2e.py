@@ -15,12 +15,14 @@ class CliE2ETests(unittest.TestCase):
                 exit_code = main(
                     [
                         "orchestrate",
-                        "--objective",
-                        "build a kratos api service",
-                        "--runtime-dir",
-                        tempdir,
-                    ]
-                )
+                    "--objective",
+                    "build a kratos api service",
+                    "--runtime-dir",
+                    tempdir,
+                    "--agent-client",
+                    "echo",
+                ]
+            )
 
             output = buffer.getvalue()
             self.assertEqual(exit_code, 0, output)

@@ -26,6 +26,7 @@ class OrchestrationStatus(str, Enum):
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
+    NEEDS_USER_DECISION = "needs_user_decision"
 
 
 @dataclass
