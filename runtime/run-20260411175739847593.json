@@ -1,0 +1,88 @@
+{
+  "run_id": "run-20260411175739847593",
+  "profile_name": "generic",
+  "objective": "修复登录500 bug",
+  "status": "completed",
+  "queue": [
+    {
+      "item_id": "w004",
+      "role": "backend-dev",
+      "title": "backend-dev:orchestration",
+      "instructions": "Objective: 修复登录500 bug; Focus: orchestration",
+      "status": "completed",
+      "result": "[backend-dev] Task: Objective: 修复登录500 bug; Focus: orchestration",
+      "error": null,
+      "attempts": 1
+    },
+    {
+      "item_id": "w005",
+      "role": "backend-dev",
+      "title": "backend-dev:profiles",
+      "instructions": "Objective: 修复登录500 bug; Focus: profiles",
+      "status": "completed",
+      "result": "[backend-dev] Task: Objective: 修复登录500 bug; Focus: profiles",
+      "error": null,
+      "attempts": 1
+    },
+    {
+      "item_id": "w007",
+      "role": "code-reviewer",
+      "title": "code-reviewer:correctness",
+      "instructions": "Objective: 修复登录500 bug; Focus: correctness",
+      "status": "completed",
+      "result": "[code-reviewer] Task: Objective: 修复登录500 bug; Focus: correctness",
+      "error": null,
+      "attempts": 1
+    },
+    {
+      "item_id": "w006",
+      "role": "tester",
+      "title": "tester:coverage",
+      "instructions": "Objective: 修复登录500 bug; Focus: coverage",
+      "status": "completed",
+      "result": "[tester] Task: Objective: 修复登录500 bug; Focus: coverage",
+      "error": null,
+      "attempts": 1
+    }
+  ],
+  "messages": [
+    {
+      "sender": "backend-dev",
+      "recipient": "tester",
+      "kind": "result",
+      "content": "[backend-dev] Task: Objective: 修复登录500 bug; Focus: orchestration",
+      "work_item_id": "w004"
+    },
+    {
+      "sender": "backend-dev",
+      "recipient": "tester",
+      "kind": "result",
+      "content": "[backend-dev] Task: Objective: 修复登录500 bug; Focus: profiles",
+      "work_item_id": "w005"
+    },
+    {
+      "sender": "code-reviewer",
+      "recipient": "coordinator",
+      "kind": "result",
+      "content": "[code-reviewer] Task: Objective: 修复登录500 bug; Focus: correctness",
+      "work_item_id": "w007"
+    },
+    {
+      "sender": "tester",
+      "recipient": "code-reviewer",
+      "kind": "result",
+      "content": "[tester] Task: Objective: 修复登录500 bug; Focus: coverage",
+      "work_item_id": "w006"
+    }
+  ],
+  "shared_context": {
+    "mode": "bugfix",
+    "resolved_stack": {
+      "language": "go",
+      "framework": "kratos",
+      "delivery": "cli",
+      "ui": "none"
+    }
+  },
+  "step_cursor": 4
+}

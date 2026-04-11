@@ -1,0 +1,139 @@
+{
+  "run_id": "run-20260411175739796642",
+  "profile_name": "generic",
+  "objective": "做一个用户系统",
+  "status": "completed",
+  "queue": [
+    {
+      "item_id": "w001",
+      "role": "analyst",
+      "title": "analyst:requirement-tracing",
+      "instructions": "Objective: 做一个用户系统; Focus: requirement-tracing",
+      "status": "completed",
+      "result": "[analyst] Task: Objective: 做一个用户系统; Focus: requirement-tracing",
+      "error": null,
+      "attempts": 1
+    },
+    {
+      "item_id": "w002",
+      "role": "analyst",
+      "title": "analyst:gap-analysis",
+      "instructions": "Objective: 做一个用户系统; Focus: gap-analysis",
+      "status": "completed",
+      "result": "[analyst] Task: Objective: 做一个用户系统; Focus: gap-analysis",
+      "error": null,
+      "attempts": 1
+    },
+    {
+      "item_id": "w003",
+      "role": "architect",
+      "title": "architect:boundary-design",
+      "instructions": "Objective: 做一个用户系统; Focus: boundary-design",
+      "status": "completed",
+      "result": "[architect] Task: Objective: 做一个用户系统; Focus: boundary-design",
+      "error": null,
+      "attempts": 1
+    },
+    {
+      "item_id": "w004",
+      "role": "backend-dev",
+      "title": "backend-dev:orchestration",
+      "instructions": "Objective: 做一个用户系统; Focus: orchestration",
+      "status": "completed",
+      "result": "[backend-dev] Task: Objective: 做一个用户系统; Focus: orchestration",
+      "error": null,
+      "attempts": 1
+    },
+    {
+      "item_id": "w005",
+      "role": "backend-dev",
+      "title": "backend-dev:profiles",
+      "instructions": "Objective: 做一个用户系统; Focus: profiles",
+      "status": "completed",
+      "result": "[backend-dev] Task: Objective: 做一个用户系统; Focus: profiles",
+      "error": null,
+      "attempts": 1
+    },
+    {
+      "item_id": "w007",
+      "role": "code-reviewer",
+      "title": "code-reviewer:correctness",
+      "instructions": "Objective: 做一个用户系统; Focus: correctness",
+      "status": "completed",
+      "result": "[code-reviewer] Task: Objective: 做一个用户系统; Focus: correctness",
+      "error": null,
+      "attempts": 1
+    },
+    {
+      "item_id": "w006",
+      "role": "tester",
+      "title": "tester:coverage",
+      "instructions": "Objective: 做一个用户系统; Focus: coverage",
+      "status": "completed",
+      "result": "[tester] Task: Objective: 做一个用户系统; Focus: coverage",
+      "error": null,
+      "attempts": 1
+    }
+  ],
+  "messages": [
+    {
+      "sender": "analyst",
+      "recipient": "architect",
+      "kind": "result",
+      "content": "[analyst] Task: Objective: 做一个用户系统; Focus: requirement-tracing",
+      "work_item_id": "w001"
+    },
+    {
+      "sender": "analyst",
+      "recipient": "architect",
+      "kind": "result",
+      "content": "[analyst] Task: Objective: 做一个用户系统; Focus: gap-analysis",
+      "work_item_id": "w002"
+    },
+    {
+      "sender": "architect",
+      "recipient": "backend-dev",
+      "kind": "result",
+      "content": "[architect] Task: Objective: 做一个用户系统; Focus: boundary-design",
+      "work_item_id": "w003"
+    },
+    {
+      "sender": "backend-dev",
+      "recipient": "tester",
+      "kind": "result",
+      "content": "[backend-dev] Task: Objective: 做一个用户系统; Focus: orchestration",
+      "work_item_id": "w004"
+    },
+    {
+      "sender": "backend-dev",
+      "recipient": "tester",
+      "kind": "result",
+      "content": "[backend-dev] Task: Objective: 做一个用户系统; Focus: profiles",
+      "work_item_id": "w005"
+    },
+    {
+      "sender": "code-reviewer",
+      "recipient": "coordinator",
+      "kind": "result",
+      "content": "[code-reviewer] Task: Objective: 做一个用户系统; Focus: correctness",
+      "work_item_id": "w007"
+    },
+    {
+      "sender": "tester",
+      "recipient": "code-reviewer",
+      "kind": "result",
+      "content": "[tester] Task: Objective: 做一个用户系统; Focus: coverage",
+      "work_item_id": "w006"
+    }
+  ],
+  "shared_context": {
+    "mode": "new_project",
+    "resolved_stack": {
+      "language": "go",
+      "framework": "kratos",
+      "delivery": "cli",
+      "ui": "none"
+    }
+  },
+  "step_cursor": 7
+}

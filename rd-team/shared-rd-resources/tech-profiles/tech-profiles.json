@@ -1,0 +1,87 @@
+{
+  "generic": {
+    "description": "default profile for non-specific projects",
+    "has_frontend": false,
+    "keywords": [],
+    "resolved_stack": {
+      "language": "go",
+      "framework": "kratos",
+      "delivery": "cli",
+      "ui": "none"
+    },
+    "role_focus": {
+      "analyst": [
+        "requirement-tracing",
+        "gap-analysis"
+      ],
+      "architect": [
+        "boundary-design"
+      ],
+      "backend-dev": [
+        "orchestration",
+        "profiles"
+      ],
+      "frontend-dev": [],
+      "code-reviewer": [
+        "correctness"
+      ],
+      "tester": [
+        "coverage"
+      ]
+    }
+  },
+  "go-kratos-web": {
+    "extends": "generic",
+    "description": "go kratos web profile",
+    "has_frontend": true,
+    "keywords": [
+      "kratos web",
+      "go-kratos-web",
+      "web service"
+    ],
+    "resolved_stack": {
+      "delivery": "http",
+      "ui": "vue",
+      "runtime": {
+        "backend": "kratos",
+        "frontend": "vue"
+      }
+    },
+    "role_focus": {
+      "frontend-dev": [
+        "routing",
+        "presentation"
+      ],
+      "tester": [
+        "ui-smoke"
+      ]
+    }
+  },
+  "go-kratos-api": {
+    "extends": "generic",
+    "description": "go kratos api profile",
+    "has_frontend": false,
+    "keywords": [
+      "kratos api",
+      "go-kratos-api",
+      "api service"
+    ],
+    "resolved_stack": {
+      "delivery": "grpc",
+      "ui": "none",
+      "runtime": {
+        "backend": "kratos",
+        "frontend": "none"
+      }
+    },
+    "role_focus": {
+      "backend-dev": [
+        "rpc",
+        "contracts"
+      ],
+      "tester": [
+        "api-smoke"
+      ]
+    }
+  }
+}
