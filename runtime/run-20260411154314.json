@@ -1,0 +1,193 @@
+{
+  "run_id": "run-20260411154314",
+  "profile_name": "go-kratos-api",
+  "objective": "build a kratos api service",
+  "status": "completed",
+  "queue": [
+    {
+      "item_id": "w001",
+      "role": "analyst",
+      "title": "analyst:requirement-tracing",
+      "instructions": "Objective: build a kratos api service; Focus: requirement-tracing",
+      "status": "completed",
+      "result": "[analyst] Task: Objective: build a kratos api service; Focus: requirement-tracing",
+      "error": null,
+      "attempts": 1
+    },
+    {
+      "item_id": "w002",
+      "role": "analyst",
+      "title": "analyst:gap-analysis",
+      "instructions": "Objective: build a kratos api service; Focus: gap-analysis",
+      "status": "completed",
+      "result": "[analyst] Task: Objective: build a kratos api service; Focus: gap-analysis",
+      "error": null,
+      "attempts": 1
+    },
+    {
+      "item_id": "w003",
+      "role": "architect",
+      "title": "architect:boundary-design",
+      "instructions": "Objective: build a kratos api service; Focus: boundary-design",
+      "status": "completed",
+      "result": "[architect] Task: Objective: build a kratos api service; Focus: boundary-design",
+      "error": null,
+      "attempts": 1
+    },
+    {
+      "item_id": "w004",
+      "role": "backend-dev",
+      "title": "backend-dev:orchestration",
+      "instructions": "Objective: build a kratos api service; Focus: orchestration",
+      "status": "completed",
+      "result": "[backend-dev] Task: Objective: build a kratos api service; Focus: orchestration",
+      "error": null,
+      "attempts": 1
+    },
+    {
+      "item_id": "w005",
+      "role": "backend-dev",
+      "title": "backend-dev:profiles",
+      "instructions": "Objective: build a kratos api service; Focus: profiles",
+      "status": "completed",
+      "result": "[backend-dev] Task: Objective: build a kratos api service; Focus: profiles",
+      "error": null,
+      "attempts": 1
+    },
+    {
+      "item_id": "w006",
+      "role": "backend-dev",
+      "title": "backend-dev:rpc",
+      "instructions": "Objective: build a kratos api service; Focus: rpc",
+      "status": "completed",
+      "result": "[backend-dev] Task: Objective: build a kratos api service; Focus: rpc",
+      "error": null,
+      "attempts": 1
+    },
+    {
+      "item_id": "w007",
+      "role": "backend-dev",
+      "title": "backend-dev:contracts",
+      "instructions": "Objective: build a kratos api service; Focus: contracts",
+      "status": "completed",
+      "result": "[backend-dev] Task: Objective: build a kratos api service; Focus: contracts",
+      "error": null,
+      "attempts": 1
+    },
+    {
+      "item_id": "w008",
+      "role": "tester",
+      "title": "tester:coverage",
+      "instructions": "Objective: build a kratos api service; Focus: coverage",
+      "status": "completed",
+      "result": "[tester] Task: Objective: build a kratos api service; Focus: coverage",
+      "error": null,
+      "attempts": 1
+    },
+    {
+      "item_id": "w009",
+      "role": "tester",
+      "title": "tester:api-smoke",
+      "instructions": "Objective: build a kratos api service; Focus: api-smoke",
+      "status": "completed",
+      "result": "[tester] Task: Objective: build a kratos api service; Focus: api-smoke",
+      "error": null,
+      "attempts": 1
+    },
+    {
+      "item_id": "w010",
+      "role": "code-reviewer",
+      "title": "code-reviewer:correctness",
+      "instructions": "Objective: build a kratos api service; Focus: correctness",
+      "status": "completed",
+      "result": "[code-reviewer] Task: Objective: build a kratos api service; Focus: correctness",
+      "error": null,
+      "attempts": 1
+    }
+  ],
+  "messages": [
+    {
+      "sender": "analyst",
+      "recipient": "architect",
+      "kind": "result",
+      "content": "[analyst] Task: Objective: build a kratos api service; Focus: requirement-tracing",
+      "work_item_id": "w001"
+    },
+    {
+      "sender": "analyst",
+      "recipient": "architect",
+      "kind": "result",
+      "content": "[analyst] Task: Objective: build a kratos api service; Focus: gap-analysis",
+      "work_item_id": "w002"
+    },
+    {
+      "sender": "architect",
+      "recipient": "backend-dev",
+      "kind": "result",
+      "content": "[architect] Task: Objective: build a kratos api service; Focus: boundary-design",
+      "work_item_id": "w003"
+    },
+    {
+      "sender": "backend-dev",
+      "recipient": "tester",
+      "kind": "result",
+      "content": "[backend-dev] Task: Objective: build a kratos api service; Focus: orchestration",
+      "work_item_id": "w004"
+    },
+    {
+      "sender": "backend-dev",
+      "recipient": "tester",
+      "kind": "result",
+      "content": "[backend-dev] Task: Objective: build a kratos api service; Focus: profiles",
+      "work_item_id": "w005"
+    },
+    {
+      "sender": "backend-dev",
+      "recipient": "tester",
+      "kind": "result",
+      "content": "[backend-dev] Task: Objective: build a kratos api service; Focus: rpc",
+      "work_item_id": "w006"
+    },
+    {
+      "sender": "backend-dev",
+      "recipient": "tester",
+      "kind": "result",
+      "content": "[backend-dev] Task: Objective: build a kratos api service; Focus: contracts",
+      "work_item_id": "w007"
+    },
+    {
+      "sender": "tester",
+      "recipient": "code-reviewer",
+      "kind": "result",
+      "content": "[tester] Task: Objective: build a kratos api service; Focus: coverage",
+      "work_item_id": "w008"
+    },
+    {
+      "sender": "tester",
+      "recipient": "code-reviewer",
+      "kind": "result",
+      "content": "[tester] Task: Objective: build a kratos api service; Focus: api-smoke",
+      "work_item_id": "w009"
+    },
+    {
+      "sender": "code-reviewer",
+      "recipient": "coordinator",
+      "kind": "result",
+      "content": "[code-reviewer] Task: Objective: build a kratos api service; Focus: correctness",
+      "work_item_id": "w010"
+    }
+  ],
+  "shared_context": {
+    "resolved_stack": {
+      "language": "go",
+      "framework": "kratos",
+      "delivery": "grpc",
+      "ui": "none",
+      "runtime": {
+        "backend": "kratos",
+        "frontend": "none"
+      }
+    }
+  },
+  "step_cursor": 10
+}

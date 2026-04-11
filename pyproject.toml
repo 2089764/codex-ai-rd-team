@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "codex-ai-rd-team"
+version = "0.1.0"
+description = "A minimal Python skeleton for RD orchestration work."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "typer>=0.12,<1.0",
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Operating System :: OS Independent",
+]
+
+[tool.setuptools.packages.find]
+include = ["orchestrator*"]
+
+
+[project.scripts]
+codex-ai-rd-team = "orchestrator.cli:main"
