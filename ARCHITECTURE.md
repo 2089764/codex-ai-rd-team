@@ -35,8 +35,8 @@ graph TD
     C --> MB[MessageBus]
     C --> AW[ArtifactWriter]
 
-    RS --> R1[runtime/run-*.json]
-    AW --> R2[runtime/artifacts/{run_id}/*]
+    RS --> R1["runtime/run-*.json"]
+    AW --> R2["runtime/artifacts/run-id/*"]
 
     A1[rd-team/ A1 兼容层] --> CLI
 
@@ -66,7 +66,7 @@ sequenceDiagram
         Core->>Agent: dispatch(item, prompt, context)
         Agent-->>Core: result text
         Core->>Core: 反馈判定(REJECT/BUG/FAIL) + 重试/回退
-        Core->>Core: 写入 runtime/artifacts/{run_id}/
+        Core->>Core: 写入 runtime/artifacts/run-id/
     end
 
     Core->>Store: save(runtime/run-<id>.json)
