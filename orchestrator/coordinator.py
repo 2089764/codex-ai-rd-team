@@ -38,6 +38,7 @@ class Coordinator:
         store: StoreLike,
         has_frontend: bool,
         artifact_writer: ArtifactWriter | None = None,
+        artifact_root: str | Path | None = None,
         message_bus: MessageBusLike | None = None,
         time_fn=None,
         heartbeat_timeout_sec: float = 150.0,
@@ -46,7 +47,8 @@ class Coordinator:
         self.dispatcher = dispatcher
         self.store = store
         self.has_frontend = has_frontend
-        self.artifact_writer = artifact_writer or ArtifactWriter(Path("docs"))
+        self.artifact_writer = artifact_writer
+        self.artifact_root = Path(artifact_root) if artifact_root is not None else Path("runtime") / "artifacts"
         self.message_bus = message_bus
         self.time_fn = time_fn or time.time
         self.heartbeat_timeout_sec = heartbeat_timeout_sec
@@ -55,6 +57,7 @@ class Coordinator:
         self.review_artifact_counter = 0
 
     def run(self, state: RuntimeState) -> RuntimeState:
+        artifact_writer = self._resolve_artifact_writer(state)
         while True:
             if state.status == OrchestrationStatus.FAILED:
                 break
@@ -80,7 +83,7 @@ class Coordinator:
                 complete_item(state, item.item_id, result)
 
             try:
-                self._persist_standard_a_artifacts(state, item, result)
+                self._persist_standard_a_artifacts(artifact_writer, state, item, result)
             except Exception:
                 pass
             state.step_cursor += 1
@@ -91,6 +94,11 @@ class Coordinator:
 
         self.store.save(state)
         return state
+
+    def _resolve_artifact_writer(self, state: RuntimeState) -> ArtifactWriter:
+        if self.artifact_writer is not None:
+            return self.artifact_writer
+        return ArtifactWriter(self.artifact_root / state.run_id)
 
     def _redispatch_timed_out_items(self, state: RuntimeState) -> bool:
         if self.message_bus is None:
@@ -155,19 +163,20 @@ class Coordinator:
 
     def _persist_standard_a_artifacts(
         self,
+        artifact_writer: ArtifactWriter,
         state: RuntimeState,
         item: WorkItem,
         content: str,
     ) -> None:
         role = item.role
         if role == Role.ANALYST:
-            self.artifact_writer.write_prd(content)
+            artifact_writer.write_prd(content)
         elif role == Role.ARCHITECT:
-            self.artifact_writer.write_architecture(content)
-            self.artifact_writer.write_api_contracts(content)
+            artifact_writer.write_architecture(content)
+            artifact_writer.write_api_contracts(content)
         elif role == Role.CODE_REVIEWER:
             self.review_artifact_counter += 1
-            self.artifact_writer.write_review(self.review_artifact_counter, content)
+            artifact_writer.write_review(self.review_artifact_counter, content)
 
     def _append_trace_message(
         self,

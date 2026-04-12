@@ -48,11 +48,11 @@ rd "重构用户权限模块，保持外部接口不变"
 
 每次运行后，优先看这些文件：
 
-- `docs/requirements/prd.md`
-- `docs/design/architecture.md`
-- `docs/design/api-contracts.md`
-- `docs/reviews/review-1.md`
 - `runtime/run-*.json`
+- `runtime/artifacts/<run_id>/requirements/prd.md`
+- `runtime/artifacts/<run_id>/design/architecture.md`
+- `runtime/artifacts/<run_id>/design/api-contracts.md`
+- `runtime/artifacts/<run_id>/reviews/review-1.md`
 
 ---
 

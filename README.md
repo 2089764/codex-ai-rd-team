@@ -1,6 +1,6 @@
 # codex-ai-rd-team
 
-一个以 **Python 内核（B）** 为主、并提供 **A1 兼容层（`rd-team/`）** 的 RD 多角色编排项目。
+一个以 **Python 编排内核** 为主、并提供 **A1 兼容层（`rd-team/`）** 的 RD 多角色编排项目。
 
 ## 快速上手（推荐）
 
@@ -17,31 +17,35 @@
 make rd OBJ="修复登录500 bug"
 ```
 
-## 已实现能力
+## 这个项目解决什么问题
+
+把一个自然语言目标（objective）转成可执行的多角色研发流程，并输出：
+
+- 运行态结果：`runtime/run-<id>.json`
+- 本次执行产物：`runtime/artifacts/<run_id>/...`
+- 可追溯消息链与状态变化（含重试、回退、失败终止）
+
+## 核心能力
 
 - 4 种任务模式自动判定：`new_project` / `feature` / `bugfix` / `refactor`
-- 6 角色工作流编排（按模式和 `has_frontend` 生成角色链）
+- 6 角色工作流编排（按模式和 `has_frontend` 动态裁剪）
 - AgentClient 双实现：
   - `CodexAgentClient`（真实调用 `codex exec`）
   - `EchoAgentClient`（本地回显，便于离线测试）
 - Tech Profile 解析（继承、关键词匹配、配置校验）
-- 运行时状态模型 + JSON 持久化
-- 状态机与回退闭环：
-  - reviewer `REJECT:` / tester `BUG:`/`FAIL:` 触发重试
+- reviewer/tester 闭环：
+  - `REJECT:`、`BUG:`、`FAIL:` 触发重试
   - 超过阈值进入 `needs_user_decision`
-- 心跳/消息总线与超时重派策略
-- 标准 A 文档产物落盘：
-  - `docs/requirements/prd.md`
-  - `docs/design/architecture.md`
-  - `docs/design/api-contracts.md`
-  - `docs/reviews/review-{N}.md`
-- A1 兼容层目录：`rd-team/`（Skill / command / agents / shared resources）
-- `/rd-team` 语义兼容：入口文档明确转调 Python CLI
+- 心跳超时重派与最终失败保护
+- A1 兼容层（`rd-team/`）与 Python 内核解耦
 
 ## 目录概览
 
 ```text
 codex-ai-rd-team/
+├── README.md
+├── QUICKSTART.md
+├── ARCHITECTURE.md
 ├── config/
 │   ├── role-prompts.json
 │   └── tech-profiles.json
@@ -70,6 +74,12 @@ codex-ai-rd-team/
 ├── runtime/
 └── tests/
 ```
+
+## 文档阅读路径（按受众）
+
+- **新同学上手**：`README.md` → `QUICKSTART.md` → `ARCHITECTURE.md`
+- **内部开发/维护**：`ARCHITECTURE.md` → `docs/README.md` → `docs/design/*`
+- **外部评审/展示**：`README.md` → `ARCHITECTURE.md`
 
 ## 在 Cursor 中使用（Python 内核）
 
@@ -107,14 +117,15 @@ run_id=run-20260412013000123456 mode=bugfix profile=generic status=completed ste
 
 其中 `REJECT:` / `BUG:` / `FAIL:` 会触发 coordinator 的重试/回退策略。
 
-## A1 兼容层同步
+## 运行产物位置（混合模式）
+
+- 稳定文档（人工维护）：`docs/`
+- 执行产物（自动生成）：`runtime/artifacts/<run_id>/`
+- 运行态快照：`runtime/run-*.json`
+
+## 维护命令
 
 ```bash
 python3 scripts/sync_tech_profiles.py
-```
-
-## 测试
-
-```bash
 python3 -m unittest discover -s tests -v
 ```

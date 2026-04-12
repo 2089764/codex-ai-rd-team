@@ -125,6 +125,7 @@ def run_orchestration(
         dispatcher=dispatcher,
         store=store,
         has_frontend=has_frontend,
+        artifact_root=Path(runtime_dir) / "artifacts",
         message_bus=message_bus,
     )
 

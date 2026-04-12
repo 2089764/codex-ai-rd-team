@@ -1,4 +1,5 @@
 import io
+import json
 import tempfile
 import unittest
 from contextlib import redirect_stdout
@@ -31,6 +32,16 @@ class CliE2ETests(unittest.TestCase):
 
             files = list(Path(tempdir).glob("*.json"))
             self.assertTrue(files)
+            self.assertEqual(len(files), 1)
+
+            state = json.loads(files[0].read_text(encoding="utf-8"))
+            run_id = state["run_id"]
+            artifact_root = Path(tempdir) / "artifacts" / run_id
+
+            self.assertTrue((artifact_root / "requirements/prd.md").exists())
+            self.assertTrue((artifact_root / "design/architecture.md").exists())
+            self.assertTrue((artifact_root / "design/api-contracts.md").exists())
+            self.assertTrue((artifact_root / "reviews/review-1.md").exists())
 
 
 if __name__ == "__main__":

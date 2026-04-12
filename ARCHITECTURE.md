@@ -1,79 +1,156 @@
 # Architecture
 
-## 总体设计
+本文描述 `codex-ai-rd-team` 的运行架构：  
+**Python 编排内核（唯一执行真相） + A1 兼容层（入口与资源适配）**。
 
-项目采用 **B 主体 + A1 兼容层**：
+---
 
-1. **B（Python 内核）**：所有业务逻辑唯一实现于 `orchestrator/`
-2. **A1（兼容层）**：`rd-team/` 仅提供 Skill/命令/角色文档与资源目录，不重复实现编排逻辑
+## 1. 设计目标
 
-核心原则：**单一执行内核，避免双实现漂移**。
+- **单一执行内核**：编排逻辑只在 `orchestrator/` 实现，避免双实现漂移。
+- **模式驱动**：根据 objective 自动选择 `new_project/feature/bugfix/refactor`。
+- **角色闭环**：reviewer/tester 可触发重试，最终进入 `completed/failed/needs_user_decision`。
+- **运行可追溯**：状态、消息、执行产物按 run 隔离落盘。
+- **兼容可扩展**：A1 目录保持兼容，不复制内核算法。
 
-## 核心模块
+---
 
-### 1) 配置与画像
+## 2. 系统分层与边界
 
-- `config/tech-profiles.json`：技术画像配置
-- `orchestrator/profiles.py`：加载、校验、继承解析、关键词匹配
+```mermaid
+graph TD
+    U[User Objective] --> CLI[orchestrator.cli]
+    CLI --> C[Coordinator]
 
-### 2) 模式与工作流
+    CLI --> CFG1[config/tech-profiles.json]
+    CLI --> CFG2[config/role-prompts.json]
 
-- `orchestrator/mode_classifier.py`：4 模式判定
-- `orchestrator/workflow.py`：按模式 + `has_frontend` 构建角色链
-- `orchestrator/planner.py`：基于 profile 生成工作项
+    C --> P[Planner + Workflow + ModeClassifier]
+    C --> D[AgentDispatcher]
+    D --> AC1[CodexAgentClient]
+    D --> AC2[EchoAgentClient]
 
-### 3) 运行时与状态控制
+    C --> SM[StateMachine]
+    C --> RS[RuntimeStore]
+    C --> MB[MessageBus]
+    C --> AW[ArtifactWriter]
 
-- `orchestrator/runtime_models.py`：`RuntimeState`/`WorkItem`/`RoutedMessage`
-- `orchestrator/state_machine.py`：状态迁移约束
-- `orchestrator/runtime_store.py`：运行态持久化
+    RS --> R1[runtime/run-*.json]
+    AW --> R2[runtime/artifacts/{run_id}/*]
 
-### 4) 调度与通信
+    A1[rd-team/ A1 兼容层] --> CLI
 
-- `orchestrator/agent_clients.py`：AgentClient 实现（Codex / Echo）
-- `orchestrator/agent_dispatcher.py`：统一 dispatch 抽象
-- `orchestrator/message_bus.py`：心跳/消息事件总线
-- `orchestrator/coordinator.py`：主循环（调度、重试、回退、超时重派、落盘）
+    style C fill:#fff3e0,stroke:#ff9800
+    style A1 fill:#f3e5f5,stroke:#9c27b0
+    style R1 fill:#e8f5e9,stroke:#4caf50
+    style R2 fill:#e3f2fd,stroke:#2196f3
+```
 
-### 5) 产物与提示词
+---
 
-- `orchestrator/artifacts.py`：标准 A 文档产物写入
-- `config/role-prompts.json` + `orchestrator/prompts.py`：角色提示词模板
+## 3. 核心执行流
 
-### 6) CLI 入口
+```mermaid
+sequenceDiagram
+    participant User
+    participant CLI as cli.py
+    participant Core as Coordinator
+    participant Agent as AgentClient
+    participant Store as RuntimeStore
 
-- `orchestrator/cli.py`
-  - 解析目标
-  - 选择 AgentClient（`auto/codex/echo`）
-  - 判定 mode
-  - 应用 mode-aware flow
-  - 驱动 coordinator
+    User->>CLI: orchestrate --objective "..."
+    CLI->>CLI: 解析 profile + mode + flow
+    CLI->>Core: run(RuntimeState)
 
-## 回退与恢复策略
+    loop work items
+        Core->>Agent: dispatch(item, prompt, context)
+        Agent-->>Core: result text
+        Core->>Core: 反馈判定(REJECT/BUG/FAIL) + 重试/回退
+        Core->>Core: 写入 runtime/artifacts/{run_id}/
+    end
 
-- Reviewer/Tester 反馈回路：
-  - `CodexAgentClient` 为 reviewer/tester 注入输出前缀契约
-  - `REJECT:` / `BUG:` / `FAIL:` 触发重试
-  - 超过阈值进入 `needs_user_decision`
-- 心跳超时重派：
-  - 超时触发重派计数
-  - 超上限置 `FAILED`
+    Core->>Store: save(runtime/run-<id>.json)
+    Core-->>CLI: final state
+    CLI-->>User: run_id/mode/profile/status/steps
+```
 
-## 产物边界
+---
 
-- 运行时状态：`runtime/run-*.json`
-- 标准 A 文档：
-  - `docs/requirements/prd.md`
-  - `docs/design/architecture.md`
-  - `docs/design/api-contracts.md`
-  - `docs/reviews/review-{N}.md`
+## 4. 模式与角色流
 
-## A1 兼容层边界
+`orchestrator/workflow.py`
 
-`rd-team/` 负责兼容目录与入口语义；`rd-team/commands/rd-team.md` 明确转调：
+| 模式 | 角色流（`has_frontend=false`） | 角色流（`has_frontend=true`） |
+|------|-------------------------------|------------------------------|
+| `new_project` | analyst → architect → backend-dev → reviewer → tester | analyst → architect → backend-dev → frontend-dev → reviewer → tester |
+| `feature` | analyst → architect → backend-dev → reviewer → tester | analyst → architect → backend-dev → frontend-dev → reviewer → tester |
+| `bugfix` | backend-dev → reviewer → tester | backend-dev → reviewer → tester |
+| `refactor` | architect → backend-dev → reviewer → tester | architect → backend-dev → frontend-dev → reviewer → tester |
+
+> 实际执行项由 `planner.py` 基于 `role_focus` 生成，再按上述角色流重排。
+
+---
+
+## 5. 状态机与恢复策略
+
+### 5.1 WorkItem 状态迁移
+
+```mermaid
+stateDiagram-v2
+    [*] --> pending
+    pending --> in_progress
+    in_progress --> completed
+    in_progress --> failed
+    failed --> in_progress: redispatch
+```
+
+### 5.2 反馈闭环
+
+- `code-reviewer` 首行 `REJECT:` → 当前项回到 `pending`（最多重试 2 次）
+- `tester` 首行 `BUG:` / `FAIL:` → 当前项回到 `pending`（最多重试 2 次）
+- 超过阈值：`needs_user_decision`
+
+### 5.3 心跳超时
+
+- 若 `message_bus` 检测到超时，触发重派并累加 attempts
+- 超过 `max_redispatch`：状态置 `failed` 并终止
+
+---
+
+## 6. 产物策略（混合模式）
+
+### 稳定文档（人工维护）
+- `README.md`
+- `QUICKSTART.md`
+- `ARCHITECTURE.md`
+- `docs/` 下设计与规范文档
+
+### 运行产物（自动生成）
+- 运行态快照：`runtime/run-*.json`
+- 执行产物：`runtime/artifacts/<run_id>/`
+  - `requirements/prd.md`
+  - `design/architecture.md`
+  - `design/api-contracts.md`
+  - `reviews/review-{N}.md`
+
+---
+
+## 7. 扩展点
+
+- **新增 profile**：修改 `config/tech-profiles.json`
+- **新增角色提示词**：修改 `config/role-prompts.json`
+- **新增角色链规则**：修改 `orchestrator/workflow.py`
+- **切换执行后端**：实现新 AgentClient 并接入 `agent_dispatcher.py`
+
+---
+
+## 8. A1 兼容层边界
+
+`rd-team/` 仅负责兼容目录与入口语义。  
+`rd-team/commands/rd-team.md` 明确转调：
 
 ```bash
 python -m orchestrator.cli orchestrate --objective "<用户输入>"
 ```
 
-不在兼容层重复实现编排算法。
+兼容层不重复实现编排算法，保证内核唯一真相。
