@@ -2,6 +2,21 @@
 
 一个以 **Python 内核（B）** 为主、并提供 **A1 兼容层（`rd-team/`）** 的 RD 多角色编排项目。
 
+## 快速上手（推荐）
+
+建议先看：[`QUICKSTART.md`](./QUICKSTART.md)  
+你日常只需要记一个入口：
+
+```bash
+./bin/rd "修复登录500 bug"
+```
+
+或使用 Makefile：
+
+```bash
+make rd OBJ="修复登录500 bug"
+```
+
 ## 已实现能力
 
 - 4 种任务模式自动判定：`new_project` / `feature` / `bugfix` / `refactor`

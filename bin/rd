@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
+
+show_help() {
+  cat <<'EOF'
+rd - codex-ai-rd-team 一键入口
+
+用法:
+  rd "修复登录500 bug"
+  rd --help
+
+可选环境变量:
+  AGENT_CLIENT   默认 auto（可设为 codex/echo）
+  RUNTIME_DIR    默认 <repo>/runtime
+  RD_PROFILE     可选，显式指定 tech profile
+  CODEX_BIN      可选，指定 codex 可执行文件
+  CODEX_MODEL    可选，指定模型（如 gpt-5.4）
+EOF
+}
+
+if [[ $# -eq 0 ]]; then
+  show_help
+  exit 2
+fi
+
+if [[ "${1:-}" == "--help" || "${1:-}" == "-h" ]]; then
+  show_help
+  exit 0
+fi
+
+OBJECTIVE="$*"
+AGENT_CLIENT="${AGENT_CLIENT:-auto}"
+RUNTIME_DIR="${RUNTIME_DIR:-${PROJECT_ROOT}/runtime}"
+
+cmd=(
+  python3 -m orchestrator.cli orchestrate
+  --objective "$OBJECTIVE"
+  --agent-client "$AGENT_CLIENT"
+  --runtime-dir "$RUNTIME_DIR"
+)
+
+if [[ -n "${RD_PROFILE:-}" ]]; then
+  cmd+=(--profile "$RD_PROFILE")
+fi
+
+if [[ -n "${CODEX_BIN:-}" ]]; then
+  cmd+=(--codex-bin "$CODEX_BIN")
+fi
+
+if [[ -n "${CODEX_MODEL:-}" ]]; then
+  cmd+=(--codex-model "$CODEX_MODEL")
+fi
+
+cd "$PROJECT_ROOT"
+"${cmd[@]}"
