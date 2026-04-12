@@ -13,6 +13,7 @@
 ### Task 1: 模式判定器（4 模式）
 
 **Files:**
+
 - Create: `orchestrator/mode_classifier.py`
 - Test: `tests/test_mode_classifier.py`
 
@@ -79,6 +80,7 @@ git commit -m "feat: add mode classifier for 4 rd-team scenarios"
 ### Task 2: 工作流生成器（6 角色 + has_frontend）
 
 **Files:**
+
 - Create: `orchestrator/workflow.py`
 - Test: `tests/test_workflow.py`
 
@@ -146,6 +148,7 @@ git commit -m "feat: add role workflow builder for rd-team modes"
 ### Task 3: 标准 A 产物写入器（PRD/设计/API/Review）
 
 **Files:**
+
 - Create: `orchestrator/artifacts.py`
 - Test: `tests/test_artifacts.py`
 - Modify: `orchestrator/coordinator.py`
@@ -239,6 +242,7 @@ git commit -m "feat: add standard-A artifact writer and coordinator integration"
 ### Task 4: 回退闭环与轮次上限（review/test）
 
 **Files:**
+
 - Modify: `orchestrator/runtime_models.py`
 - Modify: `orchestrator/coordinator.py`
 - Test: `tests/test_coordinator_loops.py`
@@ -327,6 +331,7 @@ git commit -m "feat: add review/test feedback loops with retry caps"
 ### Task 5: 心跳/邮箱总线与超时重派
 
 **Files:**
+
 - Create: `orchestrator/message_bus.py`
 - Modify: `orchestrator/coordinator.py`
 - Test: `tests/test_message_bus.py`
@@ -404,6 +409,7 @@ git commit -m "feat: add message bus heartbeat and timeout redispatch"
 ### Task 6: CLI 增强（mode + 产物 + A1 转调支持）
 
 **Files:**
+
 - Modify: `orchestrator/cli.py`
 - Create: `tests/test_cli_modes_e2e.py`
 
@@ -458,6 +464,7 @@ git commit -m "feat: add mode-aware orchestration cli output and flow"
 ### Task 7: A1 兼容层目录与资源同步
 
 **Files:**
+
 - Create: `rd-team/SKILL.md`
 - Create: `rd-team/commands/rd-team.md`
 - Create: `rd-team/agents/analyst.md`
@@ -527,6 +534,7 @@ git commit -m "feat: add A1 compatible rd-team package and tech profile sync"
 ### Task 8: 全量验证与文档收尾
 
 **Files:**
+
 - Modify: `README.md`
 - Modify: `ARCHITECTURE.md`
 - Modify: `docs/superpowers/specs/2026-04-12-rd-team-b-plus-a1-design.md`（如实现偏差说明）
@@ -549,6 +557,7 @@ Expected: 全部 PASS
 - [ ] **Step 3: 运行端到端验收命令（至少 2 模式）**
 
 Run:
+
 - `python3 -m orchestrator.cli orchestrate --objective "做一个用户系统" --runtime-dir ./runtime`
 - `python3 -m orchestrator.cli orchestrate --objective "修复登录500 bug" --runtime-dir ./runtime`
 
@@ -557,6 +566,7 @@ Expected: 输出包含 `status=completed`，并生成 `docs/requirements`/`docs/
 - [ ] **Step 4: 质量检查**
 
 Run:
+
 - `python3 -m py_compile orchestrator/*.py`
 - `rg -n "TODO|TBD|FIXME" orchestrator rd-team docs README.md ARCHITECTURE.md tests || true`
 

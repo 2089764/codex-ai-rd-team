@@ -5,17 +5,20 @@
 ## 阅读路径（按角色）
 
 ### 1) 新同学 / 首次接触项目
+
 1. 仓库根目录 `README.md`
 2. 仓库根目录 `QUICKSTART.md`
 3. 仓库根目录 `ARCHITECTURE.md`
 
 ### 2) 日常开发 / 维护者
+
 1. `ARCHITECTURE.md`
 2. `docs/design/architecture.md`
 3. `docs/design/api-contracts.md`
 4. `docs/reviews/review-1.md`
 
 ### 3) 外部评审 / 对外展示
+
 1. `README.md`
 2. `ARCHITECTURE.md`
 3. `docs/design/architecture.md`
