@@ -2,10 +2,26 @@ import unittest
 from unittest.mock import patch
 
 from orchestrator.agent_clients import CodexAgentClient, EchoAgentClient
-from orchestrator.cli import _create_agent_client
+from orchestrator.cli import _create_agent_client, main
 
 
 class CliAgentClientSelectionTests(unittest.TestCase):
+    def test_main_accepts_workdir_option(self):
+        with patch("orchestrator.cli.run_orchestration", return_value=0) as run_orchestration:
+            exit_code = main(
+                [
+                    "orchestrate",
+                    "--objective",
+                    "修复登录500 bug",
+                    "--workdir",
+                    "/tmp/project-a",
+                ]
+            )
+
+        self.assertEqual(exit_code, 0)
+        self.assertEqual(run_orchestration.call_count, 1)
+        self.assertEqual(run_orchestration.call_args.kwargs["workdir"], "/tmp/project-a")
+
     def test_explicit_echo_client(self):
         client = _create_agent_client(
             agent_client="echo",

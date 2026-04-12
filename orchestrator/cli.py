@@ -85,6 +85,7 @@ def run_orchestration(
     objective: str,
     profile: str | None,
     runtime_dir: str,
+    workdir: str | None = None,
     agent_client: str = "auto",
     codex_bin: str = "codex",
     codex_model: str | None = None,
@@ -110,12 +111,13 @@ def run_orchestration(
 
     prompts = load_role_prompts()
     project_root = str(Path(__file__).resolve().parents[1])
+    target_workdir = workdir or project_root
     dispatcher = AgentDispatcher(
         client=_create_agent_client(
             agent_client=agent_client,
             codex_bin=codex_bin,
             codex_model=codex_model,
-            workdir=project_root,
+            workdir=target_workdir,
         ),
         prompt_renderer=_build_prompt_renderer(prompts),
     )
@@ -151,6 +153,12 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         help="runtime state directory",
     )
     orchestrate.add_argument(
+        "--workdir",
+        required=False,
+        default=None,
+        help="target project working directory for codex agent execution",
+    )
+    orchestrate.add_argument(
         "--agent-client",
         choices=("auto", "codex", "echo"),
         default="auto",
@@ -184,6 +192,7 @@ def main(argv: list[str] | None = None) -> int:
             objective=args.objective,
             profile=args.profile,
             runtime_dir=args.runtime_dir,
+            workdir=args.workdir,
             agent_client=args.agent_client,
             codex_bin=args.codex_bin,
             codex_model=args.codex_model,
@@ -204,6 +213,10 @@ if typer is not None:  # pragma: no cover
             str(Path(__file__).resolve().parents[1] / "runtime"),
             help="runtime state directory",
         ),
+        workdir: str | None = typer.Option(
+            None,
+            help="target project working directory for codex agent execution",
+        ),
         agent_client: str = typer.Option(
             "auto",
             help="agent client backend: auto/codex/echo",
@@ -221,6 +234,7 @@ if typer is not None:  # pragma: no cover
             objective=objective,
             profile=profile,
             runtime_dir=runtime_dir,
+            workdir=workdir,
             agent_client=agent_client,
             codex_bin=codex_bin,
             codex_model=codex_model,

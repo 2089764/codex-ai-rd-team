@@ -1,0 +1,50 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "ai-rd",
+      "type": "shell",
+      "command": "./bin/ai-rd \"${input:rdObjective}\"",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "ai-rd-echo",
+      "type": "shell",
+      "command": "AGENT_CLIENT=echo ./bin/ai-rd \"${input:rdObjective}\"",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "test",
+      "type": "shell",
+      "command": "make test",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "sync-profiles",
+      "type": "shell",
+      "command": "make sync-profiles",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "rdObjective",
+      "type": "promptString",
+      "description": "请输入 objective（例如：修复登录500 bug）",
+      "default": "修复登录500 bug"
+    }
+  ]
+}

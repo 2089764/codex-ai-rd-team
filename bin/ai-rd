@@ -13,6 +13,7 @@ ai-rd - codex-ai-rd-team 一键入口
   ai-rd --help
 
 可选环境变量:
+  TARGET_WORKDIR  目标项目目录（默认当前目录）
   AGENT_CLIENT   默认 auto（可设为 codex/echo）
   RUNTIME_DIR    默认 <repo>/runtime
   RD_PROFILE     可选，显式指定 tech profile
@@ -34,10 +35,17 @@ fi
 OBJECTIVE="$*"
 AGENT_CLIENT="${AGENT_CLIENT:-auto}"
 RUNTIME_DIR="${RUNTIME_DIR:-${PROJECT_ROOT}/runtime}"
+TARGET_WORKDIR="${TARGET_WORKDIR:-${PWD}}"
+
+if [[ ! -d "${TARGET_WORKDIR}" ]]; then
+  echo "error: TARGET_WORKDIR does not exist: ${TARGET_WORKDIR}" >&2
+  exit 2
+fi
 
 cmd=(
   python3 -m orchestrator.cli orchestrate
   --objective "$OBJECTIVE"
+  --workdir "$TARGET_WORKDIR"
   --agent-client "$AGENT_CLIENT"
   --runtime-dir "$RUNTIME_DIR"
 )

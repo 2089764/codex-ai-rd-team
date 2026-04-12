@@ -11,6 +11,12 @@
 ./bin/ai-rd "修复登录500 bug"
 ```
 
+跨项目执行时可指定目标目录：
+
+```bash
+TARGET_WORKDIR=/path/to/your-project ./bin/ai-rd "修复登录500 bug"
+```
+
 或使用 Makefile：
 
 ```bash

@@ -74,6 +74,7 @@ export AGENT_CLIENT=codex
 export CODEX_MODEL=gpt-5.4
 export RD_PROFILE=generic
 export RUNTIME_DIR=./runtime
+export TARGET_WORKDIR=$PWD
 ```
 
 然后继续使用：
@@ -81,3 +82,21 @@ export RUNTIME_DIR=./runtime
 ```bash
 ai-rd "你的目标"
 ```
+
+> `TARGET_WORKDIR` 用于指定实际业务项目目录。  
+> 默认是你执行 `ai-rd` 时的当前目录。
+
+---
+
+## 7) 在 Cursor 里一键运行（Run Task）
+
+本仓库已内置 `/.vscode/tasks.json`，可直接在 Cursor 执行：
+
+1. 按 `Cmd + Shift + P`
+2. 输入并选择 `Tasks: Run Task`
+3. 选择任务：
+   - `ai-rd`（真实执行）
+   - `ai-rd-echo`（离线演示）
+   - `test`
+   - `sync-profiles`
+4. 选择 `ai-rd` 或 `ai-rd-echo` 时，会弹窗输入 objective
