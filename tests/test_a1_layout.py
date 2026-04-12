@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 import unittest
 from pathlib import Path
@@ -21,6 +22,11 @@ class A1LayoutTests(unittest.TestCase):
 
         for rel_path in required:
             self.assertTrue(Path(rel_path).exists(), rel_path)
+
+    def test_cli_entrypoint_ai_rd_exists_and_is_executable(self):
+        ai_rd = Path("bin/ai-rd")
+        self.assertTrue(ai_rd.exists(), ai_rd.as_posix())
+        self.assertTrue(os.access(ai_rd, os.X_OK), ai_rd.as_posix())
 
     def test_command_document_mentions_orchestrator_transpile_command(self):
         command_doc = Path("rd-team/commands/rd-team.md").read_text(encoding="utf-8")

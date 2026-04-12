@@ -8,7 +8,7 @@
 你日常只需要记一个入口：
 
 ```bash
-./bin/rd "修复登录500 bug"
+./bin/ai-rd "修复登录500 bug"
 ```
 
 或使用 Makefile：
