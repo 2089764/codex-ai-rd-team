@@ -1,6 +1,6 @@
 # rd-team-native 最小可执行示例（Bugfix 场景）
 
-目标：给你一个可以直接照着跑的最小闭环。  
+目标：提供可直接执行的最小闭环流程。  
 场景：`bugfix`（后端修复 -> 检视 -> 测试）。
 
 > 工具：`spawn_agent` / `send_input` / `wait_agent` / `close_agent`

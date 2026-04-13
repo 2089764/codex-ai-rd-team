@@ -20,7 +20,7 @@
       "role_focus"
     ],
     "field_explanations": {
-      "project_type": "项目真实类型，例如 go-kratos-web、go-kratos-api、python-web、node-web、generic。",
+      "project_type": "项目真实类型，例如 go-kratos-web、go-kratos-api、trpc-go-vue、python-web、node-web、generic。",
       "effective_profile": "当前执行应采用的画像；当用户明确指定技术栈时，以用户为准。",
       "resolved_stack": "解析后的完整技术栈信息，包含后端和前端（如适用）的框架、库、工具链。",
       "has_frontend": "当前项目是否包含前端，决定是否派发 frontend-dev Agent。",
@@ -34,7 +34,7 @@
     "resolution_order": [
       "先尊重用户明确指定的技术栈、框架或语言约束。",
       "再依据 profiles[*].signals 识别 project_type。",
-      "若命中多个画像，选最具体的（如 go-kratos-web 优先于 generic）。",
+      "若命中多个画像，选最具体的（如 go-kratos-web、trpc-go-vue 优先于 generic）。",
       "若用户明确指定了技术栈但本配置无对应画像，effective_profile 回退 generic，但 resolved_stack 保留用户指定。",
       "若拿不准或主题过于模糊，project_type 与 effective_profile 一律回退 generic。"
     ],
@@ -472,6 +472,87 @@
           ]
         }
       }
+    },
+    "trpc-go-vue": {
+      "display_name": "tRPC-Go + Vue",
+      "inherits_from": "generic",
+      "has_frontend": true,
+      "signals": {
+        "keywords": [
+          "trpc-go", "tRPC-Go", "tRPC", "trpc",
+          "Go", "Golang", "Vue", "全栈"
+        ]
+      },
+      "stack": {
+        "backend": {
+          "language": "Go",
+          "framework": "tRPC-Go",
+          "rpc": "tRPC 协议（按项目约定）",
+          "test_framework": "Go testing + testify",
+          "lint": "gofmt + golangci-lint"
+        },
+        "frontend": {
+          "framework": "Vue（复用项目现有版本）",
+          "language": "TypeScript / JavaScript",
+          "build": "Vite（如项目使用）",
+          "test_framework": "Vitest / 项目既有测试框架"
+        }
+      },
+      "role_focus": {
+        "architect": {
+          "priorities": [
+            "优先复用已有工程结构，不强制迁移到其他后端框架。",
+            "明确 tRPC 接口契约、错误码、超时和重试策略。",
+            "前后端契约字段和版本策略必须一致。"
+          ],
+          "must_check": [
+            "接口契约有 request/response 示例",
+            "任务拆解中明确前后端协作边界",
+            "未擅自替换既有框架或语言"
+          ]
+        },
+        "backend-dev": {
+          "priorities": [
+            "按 tRPC-Go 契约实现后端，不引入无关框架改造。",
+            "保持中间件、错误处理和超时策略一致。",
+            "关键接口必须有测试覆盖。"
+          ],
+          "must_check": [
+            "接口行为与契约一致",
+            "测试通过且包含关键路径",
+            "配置项未硬编码"
+          ]
+        },
+        "frontend-dev": {
+          "priorities": [
+            "按后端契约实现调用层，不猜测字段。",
+            "优先复用项目现有 Vue 工程结构与状态管理方式。",
+            "关键交互路径具备测试或可验证证据。"
+          ],
+          "must_check": [
+            "调用参数与返回映射和契约一致",
+            "API 对接状态在报告中列明",
+            "未擅自替换前端框架"
+          ]
+        },
+        "code-reviewer": {
+          "priorities": [
+            "重点检查契约一致性、错误处理和回归风险。",
+            "重点检查是否出现非必要框架迁移。"
+          ]
+        },
+        "tester": {
+          "priorities": [
+            "优先覆盖关键 FR/AC 与主要调用链路。",
+            "重点验证异常路径、超时与错误码。"
+          ],
+          "must_check": [
+            "每个 P0 AC 至少 1 条测试证据",
+            "测试报告包含 FR/AC 覆盖核对表"
+          ]
+        }
+      },
+      "note": "该画像强调契约一致与栈复用，不强制绑定除用户明确指定外的框架与语言。"
     },
     "python-web": {
       "display_name": "Python Web（占位）",

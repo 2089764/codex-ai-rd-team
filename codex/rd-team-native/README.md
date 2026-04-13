@@ -1,8 +1,8 @@
-# rd-team-native（你要的版本）
+# rd-team-native
 
-这是你说的目标：**不走 python 脚本，直接用 Codex 内置工具实现。**
+`rd-team-native` 是 **纯 Codex 原生编排实现**，不依赖 Python 编排器。
 
-## 怎么用
+## 使用流程
 
 在 Codex 中加载：
 - `rd-team/SKILL.md`
@@ -10,9 +10,15 @@
 - `agents/*.md`
 
 然后执行：
-- `/rd-team <你的需求>`
+- `/rd-team <需求描述>`
 
-或直接用脚本入口（类似 python/bin）：
+`trpc-go + vue` 场景示例：
+
+```text
+/rd-team 在现有项目中新增用户画像功能。后端使用 trpc-go，前端使用 vue，沿用当前技术栈，不切换框架或语言。
+```
+
+或直接使用脚本入口（与 `python/bin` 同级）：
 - `bin/ai-rd-native`
 - `bin/rd-native`
 - 支持 `--objective-file` / `--dry-run` / `--verbose` / `--log-file`
@@ -36,4 +42,4 @@
 - `team_delete` 语义：`close_agent`
 - 运行治理：状态面板 + 通信日志 + 越权防护
 
-> 这套就是纯 Codex 原生编排，不依赖 `python/`。
+> 该目录面向 Codex 原生工具链：`spawn_agent / send_input / wait_agent / close_agent`。

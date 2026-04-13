@@ -4,7 +4,7 @@
 
 - `python/`：Python 编排内核实现
 - `codex/`：Codex 原生工具编排实现
-  - `rd-team-native/`：纯 Codex 原生版本（不依赖 python 编排器）
+  - `rd-team-native/`：纯 Codex 原生版本（不依赖 Python 编排器）
 
 ## 当前状态
 

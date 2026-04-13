@@ -1,6 +1,6 @@
 ---
 name: rd-team-native
-description: Codex 原生多 Agent 软件研发团队（不依赖 python）。适用于新建项目、新增功能、修复 bug、代码重构。
+description: Codex 原生多 Agent 软件研发团队（不依赖 Python 编排器）。适用于新建项目、新增功能、修复 bug、代码重构。
 ---
 
 # 软件研发 Agent Team（Codex 原生）

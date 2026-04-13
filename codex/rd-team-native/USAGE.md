@@ -1,6 +1,6 @@
 # rd-team-native 使用说明
 
-下面是你关心的两个场景：旧项目 / 新项目。
+本文覆盖两个典型场景：旧项目 / 新项目。
 
 ## 一、旧项目中使用（推荐）
 
@@ -12,7 +12,7 @@ cd /path/to/existing-project
   --mode feature "给订单模块增加导出 CSV 功能"
 ```
 
-修 bug：
+修复 bug：
 
 ```bash
 cd /path/to/existing-project
@@ -54,11 +54,33 @@ cd /path/to/new-project
   --mode new_project "从零创建用户中心，支持注册、登录、RBAC"
 ```
 
-> 说明：新项目建议明确写“从零创建/新建项目”以减少模式误判。
+> 建议：新项目场景建议显式使用“从零创建/新建项目”等表述，以降低模式误判概率。
 
 ---
 
-## 三、可选参数
+## 三、trpc-go + vue 示例
+
+在已有项目中执行（推荐）：
+
+```bash
+cd /path/to/trpc-go-vue-project
+/Users/fangken/codex-ai-rd-team/codex/rd-team-native/bin/ai-rd-native \
+  --mode feature \
+  "在现有项目上新增用户画像能力。后端使用 trpc-go，前端使用 vue，沿用当前技术栈，不切换框架或语言。"
+```
+
+不切目录执行：
+
+```bash
+/Users/fangken/codex-ai-rd-team/codex/rd-team-native/bin/ai-rd-native \
+  --workdir /path/to/trpc-go-vue-project \
+  --mode feature \
+  "新增用户画像能力，保持 trpc-go + vue 技术栈"
+```
+
+---
+
+## 四、可选参数
 
 - `--mode auto|new_project|feature|bugfix|refactor`
 - `--workdir <项目目录>`
@@ -87,7 +109,7 @@ CODEX_BIN=codex \
   --objective-file ./objective.txt
 ```
 
-调试预览（不执行）：
+调试预览（不实际执行）：
 
 ```bash
 /Users/fangken/codex-ai-rd-team/codex/rd-team-native/bin/ai-rd-native \
@@ -113,7 +135,7 @@ CODEX_BIN=codex \
 
 ---
 
-## 四、与 python 版本的区别
+## 五、与 Python 版本的区别
 
 - `python/bin/ai-rd`：走 Python 编排器
 - `codex/rd-team-native/bin/ai-rd-native`：纯 Codex 原生工具编排（不走 Python）

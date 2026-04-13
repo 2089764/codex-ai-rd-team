@@ -1,6 +1,6 @@
 # Runbook 导航（rd-team-native）
 
-按你当前任务场景选择：
+请按当前任务场景选择：
 
 ## 1) 修复 Bug（最小闭环）
 - 文件：`minimal-runbook.md`

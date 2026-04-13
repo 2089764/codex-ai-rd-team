@@ -1,7 +1,7 @@
-# `rd-team-native` 架构说明（Codex 原生内置编排）
+# rd-team-native 架构说明（Codex 原生编排）
 
 本文描述 `codex/rd-team-native`：
-**不依赖 python 脚本**，直接用 Codex 内置工具编排 6 角色研发团队。
+**不依赖 Python 编排脚本**，直接使用 Codex 原生工具编排 6 角色研发团队。
 
 ---
 
@@ -77,9 +77,9 @@ tester <-> dev(s)/analyst
 
 ---
 
-## 不可完全 1:1 的点（但已软等价）
+## 与 CodeBuddy 的差异及等价策略
 
 - CodeBuddy 的 `.codebuddy/agents` 注册机制
 - CodeBuddy 的 frontmatter `tools` 平台硬白名单
 
-补偿：角色提示词强约束 + main 编排审计 + 输出契约前缀。
+等价补偿机制：角色提示词强约束 + main 编排审计 + 输出契约前缀。

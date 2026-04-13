@@ -1,8 +1,8 @@
 # Codex 机制说明
 
-你要的目标已单独落在：`codex/rd-team-native/`。
+Codex 原生实现位于：`codex/rd-team-native/`。
 
-这套是**纯 Codex 原生**，不依赖 `python/`。
+该实现为**纯 Codex 原生**，不依赖 `python/`。
 
 ## 原语映射
 
@@ -18,3 +18,4 @@
 
 - `codex/rd-team-native/rd-team/SKILL.md`
 - `codex/rd-team-native/rd-team/commands/rd-team.md`
+- `codex/rd-team-native/USAGE.md`
