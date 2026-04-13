@@ -13,6 +13,7 @@ from orchestrator.coordinator import Coordinator
 from orchestrator.message_bus import MessageBus
 from orchestrator.planner import build_work_queue
 from orchestrator.mode_classifier import classify_mode
+from orchestrator.inbox_watcher import watch_team_inbox
 from orchestrator.profiles import load_tech_profiles, resolve_tech_profile
 from orchestrator.prompts import load_role_prompts, render_role_prompt
 from orchestrator.runtime_models import OrchestrationStatus, RuntimeState
@@ -133,7 +134,11 @@ def run_orchestration(
         prompt_renderer=_build_prompt_renderer(prompts),
     )
     store = RuntimeStore(Path(runtime_dir))
-    message_bus = MessageBus(Path(runtime_dir) / "inboxes")
+    message_bus = MessageBus(
+        Path(runtime_dir) / "inboxes",
+        team_name=run_id,
+        teams_root=Path(runtime_dir) / "teams",
+    )
     coordinator = Coordinator(
         dispatcher=dispatcher,
         store=store,
@@ -160,6 +165,25 @@ def run_orchestration(
         f"attempts={attempts} feedback_retries={feedback_retries} retried_items={retried_items}"
     )
     return 0 if final_state.status.value == "completed" else 1
+
+
+def run_watch_inbox(
+    *,
+    runtime_dir: str,
+    run_id: str,
+    recipient: str = "main",
+    interval_sec: float = 30.0,
+    max_polls: int | None = None,
+    from_end: bool = False,
+) -> int:
+    return watch_team_inbox(
+        runtime_dir=runtime_dir,
+        run_id=run_id,
+        recipient=recipient,
+        interval_sec=interval_sec,
+        max_polls=max_polls,
+        from_end=from_end,
+    )
 
 
 def _run_interactive_stages(
@@ -249,12 +273,64 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="enable stage checkpoints with user confirmation",
     )
+
+    watch_inbox = subparsers.add_parser("watch-inbox", help="watch team inbox (CodeBuddy-style)")
+    watch_inbox.add_argument(
+        "--runtime-dir",
+        required=False,
+        default=str(Path(__file__).resolve().parents[1] / "runtime"),
+        help="runtime state directory",
+    )
+    watch_inbox.add_argument(
+        "--run-id",
+        required=True,
+        help="run id, for example run-20260414010101000000",
+    )
+    watch_inbox.add_argument(
+        "--recipient",
+        required=False,
+        default="main",
+        help="inbox recipient role name, default main",
+    )
+    watch_inbox.add_argument(
+        "--interval-sec",
+        required=False,
+        type=float,
+        default=30.0,
+        help="polling interval in seconds",
+    )
+    watch_inbox.add_argument(
+        "--max-polls",
+        required=False,
+        type=int,
+        default=None,
+        help="stop after N polls; omit for continuous watch",
+    )
+    watch_inbox.add_argument(
+        "--from-end",
+        action="store_true",
+        help="start watching from end of current file",
+    )
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = _build_arg_parser()
     args = parser.parse_args(argv)
+
+    if args.command == "watch-inbox":
+        try:
+            return run_watch_inbox(
+                runtime_dir=args.runtime_dir,
+                run_id=args.run_id,
+                recipient=args.recipient,
+                interval_sec=args.interval_sec,
+                max_polls=args.max_polls,
+                from_end=args.from_end,
+            )
+        except Exception as exc:  # pragma: no cover
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
 
     if args.command != "orchestrate":
         parser.print_help()
@@ -317,6 +393,40 @@ if typer is not None:  # pragma: no cover
             codex_bin=codex_bin,
             codex_model=codex_model,
             interactive=interactive,
+        )
+        raise typer.Exit(code=code)
+
+    @app.command("watch-inbox")
+    def watch_inbox_cmd(
+        run_id: str = typer.Option(..., help="run id, for example run-20260414010101000000"),
+        runtime_dir: str = typer.Option(
+            str(Path(__file__).resolve().parents[1] / "runtime"),
+            help="runtime state directory",
+        ),
+        recipient: str = typer.Option(
+            "main",
+            help="inbox recipient role name",
+        ),
+        interval_sec: float = typer.Option(
+            30.0,
+            help="polling interval in seconds",
+        ),
+        max_polls: int | None = typer.Option(
+            None,
+            help="stop after N polls; omit for continuous watch",
+        ),
+        from_end: bool = typer.Option(
+            False,
+            help="start watching from end of current file",
+        ),
+    ):
+        code = run_watch_inbox(
+            runtime_dir=runtime_dir,
+            run_id=run_id,
+            recipient=recipient,
+            interval_sec=interval_sec,
+            max_polls=max_polls,
+            from_end=from_end,
         )
         raise typer.Exit(code=code)
 else:

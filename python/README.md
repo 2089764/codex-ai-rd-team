@@ -128,6 +128,13 @@ run_id=run-20260412013000123456 mode=bugfix profile=generic status=completed ste
 - 稳定文档（人工维护）：`docs/`
 - 执行产物（自动生成）：`runtime/artifacts/<run_id>/`
 - 运行态快照：`runtime/run-*.json`
+- Team Inbox（CodeBuddy 风格）：`runtime/teams/<run_id>/inboxes/*.jsonl`
+
+实时查看 main inbox：
+
+```bash
+python3 -m orchestrator.cli watch-inbox --runtime-dir ./runtime --run-id <run_id> --recipient main
+```
 
 ## 维护命令
 

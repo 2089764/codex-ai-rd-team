@@ -225,15 +225,31 @@ class Coordinator:
         from orchestrator.runtime_models import Role
 
         next_role = route_next_role(Role(role_name), has_frontend=self.has_frontend)
+        recipient = next_role.value if next_role else "coordinator"
         state.messages.append(
             RoutedMessage(
                 sender=role_name,
-                recipient=next_role.value if next_role else "coordinator",
+                recipient=recipient,
                 kind="result",
                 content=content,
                 work_item_id=item_id,
             )
         )
+
+        if self.message_bus is not None:
+            append_routed = getattr(self.message_bus, "append_routed", None)
+            if append_routed is not None:
+                try:
+                    append_routed(
+                        sender=role_name,
+                        recipient=recipient,
+                        kind="result",
+                        content=content,
+                        summary="result",
+                        work_item_id=item_id,
+                    )
+                except Exception:
+                    pass
 
     def _append_bus_event(self, role: Role, kind: str, content: str) -> None:
         if self.message_bus is None:

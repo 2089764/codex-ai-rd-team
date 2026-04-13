@@ -132,6 +132,10 @@ stateDiagram-v2
   - `design/architecture.md`
   - `design/api-contracts.md`
   - `reviews/review-{N}.md`
+- Inbox 兼容层（CodeBuddy 风格）：
+  - 传统事件流：`runtime/inboxes/<role>.jsonl`
+  - 团队收件箱：`runtime/teams/<run_id>/inboxes/main.jsonl`
+  - 角色收件箱：`runtime/teams/<run_id>/inboxes/<role>.jsonl`
 
 ---
 

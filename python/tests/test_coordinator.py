@@ -144,6 +144,68 @@ class CoordinatorTests(unittest.TestCase):
         self.assertIn(("analyst", "heartbeat", "dispatch-start:w1"), bus.events)
         self.assertIn(("analyst", "result", "DONE: analysis"), bus.events)
 
+    def test_run_writes_routed_message_to_bus_when_supported(self):
+        class RecordingBus:
+            def __init__(self):
+                self.events = []
+                self.routed = []
+
+            def append(self, role, kind, content):
+                self.events.append((getattr(role, "value", role), kind, content))
+                return {}
+
+            def append_routed(self, *, sender, recipient, kind, content, summary=None, work_item_id=None):
+                self.routed.append(
+                    {
+                        "sender": sender,
+                        "recipient": recipient,
+                        "kind": kind,
+                        "content": content,
+                        "summary": summary,
+                        "work_item_id": work_item_id,
+                    }
+                )
+                return {}
+
+            def last_event_at(self, role):
+                return None
+
+        with TemporaryDirectory() as tmpdir:
+            state = RuntimeState(
+                run_id="run-c5",
+                profile_name="generic",
+                objective="demo",
+                queue=[
+                    WorkItem(item_id="w1", role=Role.ANALYST, title="a", instructions="a"),
+                ],
+            )
+            dispatcher = FakeDispatcher(outputs={"w1": "DONE: analysis"})
+            store = FakeStore()
+            bus = RecordingBus()
+
+            final_state = Coordinator(
+                dispatcher=dispatcher,
+                store=store,
+                has_frontend=False,
+                artifact_root=tmpdir,
+                message_bus=bus,
+            ).run(state)
+
+        self.assertEqual(final_state.status, OrchestrationStatus.COMPLETED)
+        self.assertEqual(
+            bus.routed,
+            [
+                {
+                    "sender": "analyst",
+                    "recipient": "architect",
+                    "kind": "result",
+                    "content": "DONE: analysis",
+                    "summary": "result",
+                    "work_item_id": "w1",
+                }
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

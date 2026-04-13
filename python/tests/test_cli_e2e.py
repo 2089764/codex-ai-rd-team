@@ -41,11 +41,14 @@ class CliE2ETests(unittest.TestCase):
             state = json.loads(files[0].read_text(encoding="utf-8"))
             run_id = state["run_id"]
             artifact_root = Path(tempdir) / "artifacts" / run_id
+            team_inbox_root = Path(tempdir) / "teams" / run_id / "inboxes"
 
             self.assertTrue((artifact_root / "requirements/prd.md").exists())
             self.assertTrue((artifact_root / "design/architecture.md").exists())
             self.assertTrue((artifact_root / "design/api-contracts.md").exists())
             self.assertTrue((artifact_root / "reviews/review-1.md").exists())
+            self.assertTrue((team_inbox_root / "main.jsonl").exists())
+            self.assertTrue((team_inbox_root / "analyst.jsonl").exists())
 
     def test_interactive_decline_stops_after_checkpoint(self):
         with tempfile.TemporaryDirectory() as tempdir:

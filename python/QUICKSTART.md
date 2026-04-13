@@ -53,6 +53,16 @@ ai-rd "重构用户权限模块，保持外部接口不变"
 - `runtime/artifacts/<run_id>/design/architecture.md`
 - `runtime/artifacts/<run_id>/design/api-contracts.md`
 - `runtime/artifacts/<run_id>/reviews/review-1.md`
+- `runtime/teams/<run_id>/inboxes/main.jsonl`（CodeBuddy 风格 inbox）
+
+可实时轮询 main inbox：
+
+```bash
+python3 -m orchestrator.cli watch-inbox \
+  --runtime-dir ./runtime \
+  --run-id <run_id> \
+  --recipient main
+```
 
 ---
 

@@ -1,0 +1,227 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+NATIVE_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
+REPO_ROOT="$(cd -- "${NATIVE_ROOT}/../.." && pwd)"
+
+show_help() {
+  cat <<'USAGE'
+ai-rd-native - rd-team-native (Codex 原生编排) 入口
+
+用法:
+  ai-rd-native "修复登录接口 500"
+  ai-rd-native --mode feature "给订单模块加导出功能"
+  ai-rd-native --workdir /path/to/project "重构 data 层"
+  ai-rd-native --objective-file ./objective.txt --mode bugfix
+  ai-rd-native --dry-run --verbose --mode feature "新增导出功能"
+  ai-rd-native --log-file ./runtime/ai-rd-native.log "修复登录500"
+
+参数:
+  --mode      可选: auto/new_project/feature/bugfix/refactor (默认 auto)
+  --workdir   目标项目目录（默认当前目录）
+  --model     可选，传给 codex --model
+  --objective-file  从文件读取 objective
+  --dry-run   仅打印将执行的命令与 prompt，不实际执行
+  --verbose   打印更多上下文信息
+  --log-file  将本次执行输出写入日志文件（同时输出到终端）
+  -h, --help  查看帮助
+
+环境变量:
+  CODEX_BIN   codex 可执行文件（默认: codex）
+  TARGET_WORKDIR  等价 --workdir
+  CODEX_MODEL     等价 --model
+
+说明:
+  该脚本不依赖 python 编排器，直接调用 Codex 原生工具链。
+USAGE
+}
+
+MODE="auto"
+WORKDIR="${TARGET_WORKDIR:-$PWD}"
+MODEL="${CODEX_MODEL:-}"
+OBJECTIVE_FILE=""
+DRY_RUN=0
+VERBOSE=0
+LOG_FILE=""
+
+ensure_file() {
+  local file="$1"
+  if [[ ! -f "$file" ]]; then
+    echo "error: required file not found: $file" >&2
+    exit 2
+  fi
+}
+
+resolve_codex_bin() {
+  local bin="$1"
+  if [[ "$bin" == */* ]]; then
+    if [[ -x "$bin" ]]; then
+      printf '%s\n' "$bin"
+      return 0
+    fi
+    return 1
+  fi
+  command -v "$bin" 2>/dev/null || return 1
+}
+
+print_line() {
+  local line="${1:-}"
+  if [[ -n "$LOG_FILE" ]]; then
+    printf '%s\n' "$line" | tee -a "$LOG_FILE"
+  else
+    printf '%s\n' "$line"
+  fi
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --mode)
+      MODE="${2:-}"
+      shift 2
+      ;;
+    --workdir)
+      WORKDIR="${2:-}"
+      shift 2
+      ;;
+    --model)
+      MODEL="${2:-}"
+      shift 2
+      ;;
+    --objective-file)
+      OBJECTIVE_FILE="${2:-}"
+      shift 2
+      ;;
+    --dry-run)
+      DRY_RUN=1
+      shift
+      ;;
+    --verbose)
+      VERBOSE=1
+      shift
+      ;;
+    --log-file)
+      LOG_FILE="${2:-}"
+      shift 2
+      ;;
+    -h|--help)
+      show_help
+      exit 0
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+if [[ -z "$OBJECTIVE_FILE" && $# -eq 0 ]]; then
+  show_help
+  exit 2
+fi
+
+case "$MODE" in
+  auto|new_project|feature|bugfix|refactor) ;;
+  *)
+    echo "error: unsupported --mode: $MODE" >&2
+    exit 2
+    ;;
+esac
+
+if [[ ! -d "$WORKDIR" ]]; then
+  echo "error: --workdir does not exist: $WORKDIR" >&2
+  exit 2
+fi
+
+if [[ -n "$OBJECTIVE_FILE" && $# -gt 0 ]]; then
+  echo "error: objective cannot be provided both by args and --objective-file" >&2
+  exit 2
+fi
+
+if [[ -n "$OBJECTIVE_FILE" ]]; then
+  if [[ ! -f "$OBJECTIVE_FILE" ]]; then
+    echo "error: --objective-file not found: $OBJECTIVE_FILE" >&2
+    exit 2
+  fi
+  OBJECTIVE="$(cat "$OBJECTIVE_FILE")"
+else
+  OBJECTIVE="$*"
+fi
+
+if [[ -z "${OBJECTIVE// }" ]]; then
+  echo "error: objective is empty" >&2
+  exit 2
+fi
+
+if [[ -n "$LOG_FILE" ]]; then
+  mkdir -p "$(dirname -- "$LOG_FILE")"
+  touch "$LOG_FILE"
+  print_line "[ai-rd-native] log_file=$LOG_FILE"
+fi
+
+ensure_file "${NATIVE_ROOT}/rd-team/commands/rd-team.md"
+ensure_file "${NATIVE_ROOT}/rd-team/SKILL.md"
+ensure_file "${NATIVE_ROOT}/examples/index.md"
+ensure_file "${NATIVE_ROOT}/rd-team/shared-rd-resources/tech-profiles/tech-profiles.json"
+ensure_file "${NATIVE_ROOT}/agents/rd-analyst.md"
+
+CODEX_BIN_INPUT="${CODEX_BIN:-codex}"
+if ! RESOLVED_CODEX_BIN="$(resolve_codex_bin "$CODEX_BIN_INPUT")"; then
+  echo "error: codex executable not found: $CODEX_BIN_INPUT" >&2
+  exit 2
+fi
+
+read -r -d '' PROMPT <<EOP || true
+你是 rd-team-native 的 main 协调者。
+
+请严格按以下规范执行（先读取文件，再执行）：
+1) ${NATIVE_ROOT}/rd-team/commands/rd-team.md
+2) ${NATIVE_ROOT}/rd-team/SKILL.md
+3) ${NATIVE_ROOT}/agents/*.md
+4) ${NATIVE_ROOT}/examples/index.md
+
+运行上下文：
+- target_workdir: ${WORKDIR}
+- mode_hint: ${MODE}
+- objective: ${OBJECTIVE}
+
+执行要求：
+- 在 target_workdir 中完成任务
+- 使用 Codex 原生工具: spawn_agent / send_input / wait_agent / close_agent
+- 不要转调 python 编排器
+- 输出阶段进展与最终总结
+EOP
+
+cmd=("$RESOLVED_CODEX_BIN" exec --skip-git-repo-check --color never -C "$WORKDIR")
+if [[ -n "$MODEL" ]]; then
+  cmd+=(--model "$MODEL")
+fi
+cmd+=(-)
+
+if [[ "$VERBOSE" -eq 1 ]]; then
+  print_line "[ai-rd-native] mode=$MODE"
+  print_line "[ai-rd-native] workdir=$WORKDIR"
+  print_line "[ai-rd-native] codex_bin=$RESOLVED_CODEX_BIN"
+  if [[ -n "$MODEL" ]]; then
+    print_line "[ai-rd-native] model=$MODEL"
+  fi
+  print_line "[ai-rd-native] native_root=$NATIVE_ROOT"
+fi
+
+if [[ "$DRY_RUN" -eq 1 ]]; then
+  print_line "=== DRY RUN: COMMAND ==="
+  cmd_line="$(printf '%q ' "${cmd[@]}")"
+  print_line "$cmd_line"
+  print_line "=== DRY RUN: PROMPT ==="
+  print_line "$PROMPT"
+  exit 0
+fi
+
+if [[ -n "$LOG_FILE" ]]; then
+  "${cmd[@]}" <<<"$PROMPT" 2>&1 | tee -a "$LOG_FILE"
+else
+  "${cmd[@]}" <<<"$PROMPT"
+fi

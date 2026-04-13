@@ -37,6 +37,85 @@ class MessageBusTests(unittest.TestCase):
             ],
         )
 
+    def test_append_mirrors_event_to_team_inboxes(self):
+        root = Path(tempfile.mkdtemp())
+        times = iter([10.0])
+
+        bus = MessageBus(
+            root / "inboxes",
+            team_name="rd-team-1",
+            teams_root=root / "teams",
+            time_fn=lambda: next(times),
+        )
+
+        bus.append("analyst", "heartbeat", "dispatch-start:w1")
+
+        main_inbox = root / "teams" / "rd-team-1" / "inboxes" / "main.jsonl"
+        analyst_inbox = root / "teams" / "rd-team-1" / "inboxes" / "analyst.jsonl"
+
+        self.assertTrue(main_inbox.exists())
+        self.assertTrue(analyst_inbox.exists())
+
+        main_events = [json.loads(line) for line in main_inbox.read_text(encoding="utf-8").splitlines()]
+        analyst_events = [json.loads(line) for line in analyst_inbox.read_text(encoding="utf-8").splitlines()]
+
+        expected = {
+            "sender": "analyst",
+            "recipient": "main",
+            "kind": "heartbeat",
+            "summary": "heartbeat",
+            "content": "dispatch-start:w1",
+            "ts": 10.0,
+        }
+        self.assertEqual(main_events, [expected])
+        self.assertEqual(analyst_events, [expected])
+
+    def test_append_routed_writes_recipient_and_main_inboxes(self):
+        root = Path(tempfile.mkdtemp())
+        times = iter([11.0])
+        bus = MessageBus(
+            root / "inboxes",
+            team_name="rd-team-2",
+            teams_root=root / "teams",
+            time_fn=lambda: next(times),
+        )
+
+        bus.append_routed(
+            sender="analyst",
+            recipient="architect",
+            kind="message",
+            content="请确认接口契约",
+            summary="handoff",
+            work_item_id="w1",
+        )
+
+        architect_inbox = root / "teams" / "rd-team-2" / "inboxes" / "architect.jsonl"
+        main_inbox = root / "teams" / "rd-team-2" / "inboxes" / "main.jsonl"
+        analyst_inbox = root / "teams" / "rd-team-2" / "inboxes" / "analyst.jsonl"
+
+        expected = {
+            "sender": "analyst",
+            "recipient": "architect",
+            "kind": "message",
+            "content": "请确认接口契约",
+            "summary": "handoff",
+            "work_item_id": "w1",
+            "ts": 11.0,
+        }
+
+        self.assertEqual(
+            [json.loads(line) for line in architect_inbox.read_text(encoding="utf-8").splitlines()],
+            [expected],
+        )
+        self.assertEqual(
+            [json.loads(line) for line in main_inbox.read_text(encoding="utf-8").splitlines()],
+            [expected],
+        )
+        self.assertEqual(
+            [json.loads(line) for line in analyst_inbox.read_text(encoding="utf-8").splitlines()],
+            [expected],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
