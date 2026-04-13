@@ -56,7 +56,7 @@ class Coordinator:
         self.feedback_retry_counts: dict[str, int] = {}
         self.review_artifact_counter = 0
 
-    def run(self, state: RuntimeState) -> RuntimeState:
+    def run(self, state: RuntimeState, *, allowed_roles: set[str] | None = None) -> RuntimeState:
         artifact_writer = self._resolve_artifact_writer(state)
         while True:
             if state.status == OrchestrationStatus.FAILED:
@@ -64,6 +64,13 @@ class Coordinator:
 
             if self._redispatch_timed_out_items(state):
                 if state.status == OrchestrationStatus.FAILED:
+                    break
+
+            if allowed_roles is not None:
+                next_pending = state.next_pending_item()
+                if next_pending is None:
+                    break
+                if next_pending.role.value not in allowed_roles:
                     break
 
             item = start_next_item(state)

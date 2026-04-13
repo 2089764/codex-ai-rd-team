@@ -15,9 +15,9 @@ from orchestrator.planner import build_work_queue
 from orchestrator.mode_classifier import classify_mode
 from orchestrator.profiles import load_tech_profiles, resolve_tech_profile
 from orchestrator.prompts import load_role_prompts, render_role_prompt
-from orchestrator.runtime_models import RuntimeState
+from orchestrator.runtime_models import OrchestrationStatus, RuntimeState
 from orchestrator.runtime_store import RuntimeStore
-from orchestrator.workflow import build_role_flow
+from orchestrator.workflow import build_execution_stages, build_role_flow
 
 try:  # optional runtime dependency in this sandbox
     import typer
@@ -94,6 +94,7 @@ def run_orchestration(
     agent_client: str = "auto",
     codex_bin: str = "codex",
     codex_model: str | None = None,
+    interactive: bool = False,
 ) -> int:
     catalog = load_tech_profiles()
     resolved = resolve_tech_profile(catalog, explicit=profile, text=objective)
@@ -101,6 +102,7 @@ def run_orchestration(
     has_frontend = bool(resolved.data.get("has_frontend", False))
     queue = build_work_queue(profile=resolved, objective=objective)
     queue = _apply_mode_flow(queue, mode=mode, has_frontend=has_frontend)
+    execution_stages = build_execution_stages(mode=mode, has_frontend=has_frontend)
 
     run_id = dt.datetime.now(dt.UTC).strftime("run-%Y%m%d%H%M%S%f")
     state = RuntimeState(
@@ -114,6 +116,7 @@ def run_orchestration(
             "effective_profile": resolved.name,
             "resolved_stack": resolved.data.get("resolved_stack", {}),
             "role_focus": resolved.data.get("role_focus", {}),
+            "execution_stages": execution_stages,
         },
     )
 
@@ -139,7 +142,14 @@ def run_orchestration(
         message_bus=message_bus,
     )
 
-    final_state = coordinator.run(state)
+    if interactive:
+        final_state = _run_interactive_stages(
+            coordinator=coordinator,
+            state=state,
+            execution_stages=execution_stages,
+        )
+    else:
+        final_state = coordinator.run(state)
     metrics = final_state.shared_context.get("run_metrics", {})
     attempts = metrics.get("total_attempts", 0)
     feedback_retries = metrics.get("feedback_retries", 0)
@@ -150,6 +160,51 @@ def run_orchestration(
         f"attempts={attempts} feedback_retries={feedback_retries} retried_items={retried_items}"
     )
     return 0 if final_state.status.value == "completed" else 1
+
+
+def _run_interactive_stages(
+    *,
+    coordinator: Coordinator,
+    state: RuntimeState,
+    execution_stages: list[dict[str, object]],
+) -> RuntimeState:
+    final_state = state
+    for stage_index, stage in enumerate(execution_stages):
+        roles = stage.get("roles", [])
+        if not isinstance(roles, list):
+            continue
+        allowed_roles = {role for role in roles if isinstance(role, str)}
+        final_state = coordinator.run(final_state, allowed_roles=allowed_roles)
+
+        if final_state.status in {
+            OrchestrationStatus.FAILED,
+            OrchestrationStatus.NEEDS_USER_DECISION,
+            OrchestrationStatus.COMPLETED,
+        }:
+            break
+
+        if stage_index >= len(execution_stages) - 1:
+            break
+
+        if not _confirm_stage_continue(stage):
+            final_state.status = OrchestrationStatus.NEEDS_USER_DECISION
+            coordinator.store.save(final_state)
+            break
+
+    return final_state
+
+
+def _confirm_stage_continue(stage: dict[str, object]) -> bool:
+    stage_name = str(stage.get("name", "unknown"))
+    if stage_name == "analysis":
+        prompt = "分析阶段已完成，是否确认继续进入架构阶段？ [y/N]: "
+    elif stage_name == "architecture":
+        prompt = "架构阶段已完成，是否确认继续进入开发阶段？ [y/N]: "
+    else:
+        prompt = f"阶段 {stage_name} 已完成，是否继续下一阶段？ [y/N]: "
+
+    answer = input(prompt).strip().lower()
+    return answer in {"y", "yes", "是"}
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
@@ -189,6 +244,11 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         default=None,
         help="codex model name",
     )
+    orchestrate.add_argument(
+        "--interactive",
+        action="store_true",
+        help="enable stage checkpoints with user confirmation",
+    )
     return parser
 
 
@@ -209,6 +269,7 @@ def main(argv: list[str] | None = None) -> int:
             agent_client=args.agent_client,
             codex_bin=args.codex_bin,
             codex_model=args.codex_model,
+            interactive=args.interactive,
         )
     except Exception as exc:  # pragma: no cover
         print(f"error: {exc}", file=sys.stderr)
@@ -242,6 +303,10 @@ if typer is not None:  # pragma: no cover
             None,
             help="codex model name",
         ),
+        interactive: bool = typer.Option(
+            False,
+            help="enable stage checkpoints with user confirmation",
+        ),
     ):
         code = run_orchestration(
             objective=objective,
@@ -251,6 +316,7 @@ if typer is not None:  # pragma: no cover
             agent_client=agent_client,
             codex_bin=codex_bin,
             codex_model=codex_model,
+            interactive=interactive,
         )
         raise typer.Exit(code=code)
 else:

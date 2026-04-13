@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
 
 from orchestrator.cli import main
 
@@ -45,6 +46,35 @@ class CliE2ETests(unittest.TestCase):
             self.assertTrue((artifact_root / "design/architecture.md").exists())
             self.assertTrue((artifact_root / "design/api-contracts.md").exists())
             self.assertTrue((artifact_root / "reviews/review-1.md").exists())
+
+    def test_interactive_decline_stops_after_checkpoint(self):
+        with tempfile.TemporaryDirectory() as tempdir:
+            buffer = io.StringIO()
+            with patch("builtins.input", side_effect=["n"]):
+                with redirect_stdout(buffer):
+                    exit_code = main(
+                        [
+                            "orchestrate",
+                            "--objective",
+                            "做一个用户系统",
+                            "--runtime-dir",
+                            tempdir,
+                            "--agent-client",
+                            "echo",
+                            "--interactive",
+                        ]
+                    )
+
+            output = buffer.getvalue()
+            self.assertEqual(exit_code, 1, output)
+            self.assertIn("status=needs_user_decision", output.lower())
+
+            files = list(Path(tempdir).glob("*.json"))
+            self.assertEqual(len(files), 1)
+            state = json.loads(files[0].read_text(encoding="utf-8"))
+            statuses = [item["status"] for item in state["queue"]]
+            self.assertIn("completed", statuses)
+            self.assertIn("pending", statuses)
 
 
 if __name__ == "__main__":

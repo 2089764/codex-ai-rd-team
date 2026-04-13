@@ -92,6 +92,22 @@ class CliModeE2ETests(unittest.TestCase):
 
             state = self._load_runtime_state(Path(tempdir.name))
             self.assertEqual(state["shared_context"]["mode"], "new_project")
+            self.assertEqual(state["shared_context"]["project_type"], "generic")
+            self.assertEqual(state["shared_context"]["effective_profile"], "generic")
+            self.assertIn("execution_stages", state["shared_context"])
+        finally:
+            tempdir.cleanup()
+
+    def test_new_project_web_profile_contains_parallel_stage_marker(self):
+        exit_code, output, tempdir = self._run_cli("build a kratos web service from scratch")
+        try:
+            self.assertEqual(exit_code, 0, output)
+            self.assertIn("profile=go-kratos-web", output)
+            state = self._load_runtime_state(Path(tempdir.name))
+            stages = state["shared_context"]["execution_stages"]
+            parallel_stages = [stage for stage in stages if stage["parallel"]]
+            self.assertEqual(len(parallel_stages), 1)
+            self.assertEqual(parallel_stages[0]["roles"], ["backend-dev", "frontend-dev"])
         finally:
             tempdir.cleanup()
 

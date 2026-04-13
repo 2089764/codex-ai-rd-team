@@ -1,6 +1,6 @@
 import unittest
 
-from orchestrator.workflow import build_role_flow
+from orchestrator.workflow import build_execution_stages, build_role_flow
 
 
 class WorkflowTests(unittest.TestCase):
@@ -98,6 +98,21 @@ class WorkflowTests(unittest.TestCase):
                 "tester",
             ],
         )
+
+    def test_build_execution_stages_marks_parallel_backend_frontend(self):
+        stages = build_execution_stages(mode="new_project", has_frontend=True)
+        self.assertEqual(stages[0]["roles"], ["analyst"])
+        self.assertEqual(stages[1]["roles"], ["architect"])
+        self.assertEqual(stages[2]["roles"], ["backend-dev", "frontend-dev"])
+        self.assertTrue(stages[2]["parallel"])
+
+    def test_build_execution_stages_bugfix_has_no_parallel(self):
+        stages = build_execution_stages(mode="bugfix", has_frontend=True)
+        self.assertEqual(
+            [stage["roles"] for stage in stages],
+            [["backend-dev"], ["code-reviewer"], ["tester"]],
+        )
+        self.assertTrue(all(stage["parallel"] is False for stage in stages))
 
 
 if __name__ == "__main__":
