@@ -16,3 +16,7 @@
 本项目源于 CodeBuddy 版本的 `ai-rd-team`，参考仓库：
 
 - https://github.com/eyjian/ai-skills/tree/main/ai-rd-team
+
+## License
+
+MIT，见 `LICENSE`。
