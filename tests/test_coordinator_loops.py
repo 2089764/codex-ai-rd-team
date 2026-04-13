@@ -57,7 +57,7 @@ class CoordinatorLoopTests(unittest.TestCase):
                     "REJECT: second pass",
                     "REJECT: third pass",
                 ],
-                "dev-1": ["done:dev-1"],
+                "dev-1": ["DONE: dev-1"],
             }
         )
         store = FakeStore()
@@ -91,7 +91,7 @@ class CoordinatorLoopTests(unittest.TestCase):
                     "REJECT: needs revision",
                     "APPROVED: looks good",
                 ],
-                "dev-1": ["done:dev-1"],
+                "dev-1": ["DONE: dev-1"],
             }
         )
         store = FakeStore()

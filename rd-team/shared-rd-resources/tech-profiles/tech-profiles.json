@@ -10,24 +10,57 @@
       "ui": "none"
     },
     "role_focus": {
-      "analyst": [
-        "requirement-tracing",
-        "gap-analysis"
-      ],
-      "architect": [
-        "boundary-design"
-      ],
-      "backend-dev": [
-        "orchestration",
-        "profiles"
-      ],
-      "frontend-dev": [],
-      "code-reviewer": [
-        "correctness"
-      ],
-      "tester": [
-        "coverage"
-      ]
+      "analyst": {
+        "priorities": [
+          "requirement-tracing",
+          "gap-analysis"
+        ],
+        "must_check": [
+          "acceptance-criteria"
+        ],
+        "avoid": [
+          "premature-solutioning"
+        ]
+      },
+      "architect": {
+        "priorities": [
+          "boundary-design"
+        ],
+        "must_check": [
+          "dependency-direction"
+        ]
+      },
+      "backend-dev": {
+        "priorities": [
+          "orchestration",
+          "profiles"
+        ],
+        "must_check": [
+          "contract-compatibility"
+        ]
+      },
+      "frontend-dev": {
+        "priorities": []
+      },
+      "code-reviewer": {
+        "priorities": [
+          "correctness"
+        ],
+        "must_check": [
+          "security"
+        ],
+        "avoid": [
+          "direct-code-edit"
+        ]
+      },
+      "tester": {
+        "priorities": [
+          "coverage"
+        ],
+        "must_check": [
+          "reproducibility"
+        ]
+      }
     }
   },
   "go-kratos-web": {
@@ -48,13 +81,20 @@
       }
     },
     "role_focus": {
-      "frontend-dev": [
-        "routing",
-        "presentation"
-      ],
-      "tester": [
-        "ui-smoke"
-      ]
+      "frontend-dev": {
+        "priorities": [
+          "routing",
+          "presentation"
+        ],
+        "must_check": [
+          "api-contract-parity"
+        ]
+      },
+      "tester": {
+        "priorities": [
+          "ui-smoke"
+        ]
+      }
     }
   },
   "go-kratos-api": {
@@ -75,13 +115,17 @@
       }
     },
     "role_focus": {
-      "backend-dev": [
-        "rpc",
-        "contracts"
-      ],
-      "tester": [
-        "api-smoke"
-      ]
+      "backend-dev": {
+        "priorities": [
+          "rpc",
+          "contracts"
+        ]
+      },
+      "tester": {
+        "priorities": [
+          "api-smoke"
+        ]
+      }
     }
   }
 }

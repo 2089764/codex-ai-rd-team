@@ -70,10 +70,18 @@ class Coordinator:
             if item is None:
                 break
 
+            self._append_bus_event(item.role, "heartbeat", f"dispatch-start:{item.item_id}")
             try:
                 result = self.dispatcher.dispatch(item, state)
             except AgentDispatchError as exc:
+                self._append_bus_event(item.role, "error", str(exc))
                 fail_item(state, item.item_id, str(exc))
+                break
+
+            contract_error = self._validate_result_contract(item, result)
+            if contract_error is not None:
+                self._append_bus_event(item.role, "contract_error", contract_error)
+                fail_item(state, item.item_id, contract_error)
                 break
 
             retryable_feedback = self._handle_retryable_feedback(state, item, result)
@@ -81,6 +89,7 @@ class Coordinator:
                 if item.error is not None:
                     item.error = None
                 complete_item(state, item.item_id, result)
+            self._append_bus_event(item.role, "result", result)
 
             try:
                 self._persist_standard_a_artifacts(artifact_writer, state, item, result)
@@ -92,6 +101,7 @@ class Coordinator:
             if state.status == OrchestrationStatus.NEEDS_USER_DECISION:
                 break
 
+        self._finalize_metrics(state)
         self.store.save(state)
         return state
 
@@ -123,9 +133,11 @@ class Coordinator:
             if item.attempts > self.max_redispatch:
                 item.status = WorkStatus.FAILED
                 state.status = OrchestrationStatus.FAILED
+                self._append_bus_event(item.role, "failed", item.error)
                 return True
 
             item.status = WorkStatus.PENDING
+            self._append_bus_event(item.role, "redispatch", item.error)
             redispatched = True
 
         return redispatched
@@ -160,6 +172,24 @@ class Coordinator:
         if item.role == Role.TESTER:
             return normalized.startswith("BUG:") or normalized.startswith("FAIL:")
         return False
+
+    def _validate_result_contract(self, item: WorkItem, result: str) -> str | None:
+        normalized = result.lstrip()
+        if item.role == Role.CODE_REVIEWER:
+            valid_prefixes = ("REJECT:", "APPROVE:", "APPROVED:")
+        elif item.role == Role.TESTER:
+            valid_prefixes = ("BUG:", "FAIL:", "PASS:")
+        else:
+            valid_prefixes = ("DONE:",)
+
+        if normalized.startswith(valid_prefixes):
+            return None
+
+        expected = ", ".join(valid_prefixes)
+        return (
+            f"invalid result contract for role '{item.role.value}': "
+            f"expected prefix in [{expected}]"
+        )
 
     def _persist_standard_a_artifacts(
         self,
@@ -197,3 +227,24 @@ class Coordinator:
                 work_item_id=item_id,
             )
         )
+
+    def _append_bus_event(self, role: Role, kind: str, content: str) -> None:
+        if self.message_bus is None:
+            return
+        append = getattr(self.message_bus, "append", None)
+        if append is None:
+            return
+        try:
+            append(role, kind, content)
+        except Exception:
+            return
+
+    def _finalize_metrics(self, state: RuntimeState) -> None:
+        total_attempts = sum(item.attempts for item in state.queue)
+        retried_items = sum(1 for item in state.queue if item.attempts > 1)
+        feedback_retries = sum(self.feedback_retry_counts.values())
+        state.shared_context["run_metrics"] = {
+            "total_attempts": total_attempts,
+            "retried_items": retried_items,
+            "feedback_retries": feedback_retries,
+        }

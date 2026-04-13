@@ -39,7 +39,7 @@ class CoordinatorTests(unittest.TestCase):
                     WorkItem(item_id="w2", role=Role.ARCHITECT, title="b", instructions="b"),
                 ],
             )
-            dispatcher = FakeDispatcher(outputs={"w1": "analysis", "w2": "architecture"})
+            dispatcher = FakeDispatcher(outputs={"w1": "DONE: analysis", "w2": "DONE: architecture"})
             store = FakeStore()
 
             final_state = Coordinator(
@@ -79,6 +79,70 @@ class CoordinatorTests(unittest.TestCase):
         self.assertEqual(final_state.status, OrchestrationStatus.FAILED)
         self.assertEqual(final_state.queue[1].status, WorkStatus.PENDING)
         self.assertTrue(store.saved_states)
+
+    def test_run_marks_failed_when_result_contract_invalid(self):
+        with TemporaryDirectory() as tmpdir:
+            state = RuntimeState(
+                run_id="run-c3",
+                profile_name="generic",
+                objective="demo",
+                queue=[
+                    WorkItem(item_id="w1", role=Role.TESTER, title="t", instructions="t"),
+                    WorkItem(item_id="w2", role=Role.BACKEND_DEV, title="b", instructions="b"),
+                ],
+            )
+            dispatcher = FakeDispatcher(outputs={"w1": "DONE: not a tester contract"})
+            store = FakeStore()
+
+            final_state = Coordinator(
+                dispatcher=dispatcher,
+                store=store,
+                has_frontend=False,
+                artifact_root=tmpdir,
+            ).run(state)
+
+        self.assertEqual(final_state.status, OrchestrationStatus.FAILED)
+        self.assertEqual(final_state.queue[0].status, WorkStatus.FAILED)
+        self.assertIn("invalid result contract", final_state.queue[0].error or "")
+        self.assertEqual(final_state.queue[1].status, WorkStatus.PENDING)
+        self.assertTrue(store.saved_states)
+
+    def test_run_writes_heartbeat_and_result_to_message_bus(self):
+        class RecordingBus:
+            def __init__(self):
+                self.events = []
+
+            def append(self, role, kind, content):
+                self.events.append((getattr(role, "value", role), kind, content))
+                return {}
+
+            def last_event_at(self, role):
+                return None
+
+        with TemporaryDirectory() as tmpdir:
+            state = RuntimeState(
+                run_id="run-c4",
+                profile_name="generic",
+                objective="demo",
+                queue=[
+                    WorkItem(item_id="w1", role=Role.ANALYST, title="a", instructions="a"),
+                ],
+            )
+            dispatcher = FakeDispatcher(outputs={"w1": "DONE: analysis"})
+            store = FakeStore()
+            bus = RecordingBus()
+
+            final_state = Coordinator(
+                dispatcher=dispatcher,
+                store=store,
+                has_frontend=False,
+                artifact_root=tmpdir,
+                message_bus=bus,
+            ).run(state)
+
+        self.assertEqual(final_state.status, OrchestrationStatus.COMPLETED)
+        self.assertIn(("analyst", "heartbeat", "dispatch-start:w1"), bus.events)
+        self.assertIn(("analyst", "result", "DONE: analysis"), bus.events)
 
 
 if __name__ == "__main__":

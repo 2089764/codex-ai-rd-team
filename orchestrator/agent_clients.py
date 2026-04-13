@@ -12,7 +12,12 @@ class EchoAgentClient:
     def run(self, *, role: str, prompt: str, context: dict[str, Any]) -> str:
         _ = context
         tail = prompt.splitlines()[-1] if prompt else ""
-        return f"[{role}] {tail}".strip()
+        payload = f"[{role}] {tail}".strip()
+        if role == "code-reviewer":
+            return f"APPROVE: {payload}"
+        if role == "tester":
+            return f"PASS: {payload}"
+        return f"DONE: {payload}"
 
 
 class CodexAgentClient:
@@ -103,7 +108,7 @@ class CodexAgentClient:
 
 def _output_contract_for_role(role: str) -> str:
     if role == "code-reviewer":
-        return "首行必须以 `REJECT:` 或 `APPROVE:` 开头。"
+        return "首行必须以 `REJECT:`、`APPROVE:` 或 `APPROVED:` 开头。"
     if role == "tester":
         return "首行必须以 `BUG:`、`FAIL:` 或 `PASS:` 开头。"
     return "首行必须以 `DONE:` 开头。"

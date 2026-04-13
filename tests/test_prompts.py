@@ -42,6 +42,31 @@ class PromptsTests(unittest.TestCase):
         self.assertIn("拆解里程碑", text)
         self.assertIn("go-kratos-api", text)
 
+    def test_render_role_prompt_includes_structured_role_focus(self):
+        prompts = {
+            "code-reviewer": "你是审查者。",
+            "coordinator": "你是协调者。",
+        }
+        text = render_role_prompt(
+            role=Role.CODE_REVIEWER,
+            objective="构建订单系统",
+            instructions="审查 backend 变更",
+            profile_name="go-kratos-api",
+            prompts=prompts,
+            role_focus={
+                "priorities": ["correctness", "security"],
+                "must_check": ["api-contract"],
+                "avoid": ["直接改代码"],
+            },
+        )
+
+        self.assertIn("RoleFocus.Priorities", text)
+        self.assertIn("correctness", text)
+        self.assertIn("RoleFocus.MustCheck", text)
+        self.assertIn("api-contract", text)
+        self.assertIn("RoleFocus.Avoid", text)
+        self.assertIn("直接改代码", text)
+
     def test_render_role_prompt_raises_when_template_missing(self):
         with self.assertRaises(PromptConfigError):
             render_role_prompt(

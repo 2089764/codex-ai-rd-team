@@ -159,6 +159,46 @@ class TechProfileTests(unittest.TestCase):
         self.assertEqual(resolved.data["role_focus"]["backend-dev"], ["orchestration", "profiles", "rpc", "contracts"])
         self.assertEqual(resolved.data["role_focus"]["tester"], ["coverage", "api-smoke"])
 
+    def test_role_focus_supports_structured_mapping(self):
+        tempdir, path = write_profiles(
+            {
+                "generic": {
+                    "has_frontend": False,
+                    "keywords": [],
+                    "resolved_stack": {
+                        "language": "go",
+                        "framework": "kratos",
+                        "delivery": "cli",
+                        "ui": "none",
+                    },
+                    "role_focus": {
+                        "analyst": {
+                            "priorities": ["clarity"],
+                            "must_check": ["acceptance-criteria"],
+                            "avoid": ["solutioning"],
+                        },
+                        "architect": {"priorities": ["boundaries"]},
+                        "backend-dev": {"priorities": ["contracts"]},
+                        "frontend-dev": {"priorities": []},
+                        "code-reviewer": {"must_check": ["security"]},
+                        "tester": {"priorities": ["coverage"]},
+                    },
+                }
+            }
+        )
+        self.addCleanup(tempdir.cleanup)
+
+        catalog = load_tech_profiles(path)
+        resolved = resolve_tech_profile(catalog, explicit="generic")
+        self.assertEqual(
+            resolved.data["role_focus"]["analyst"]["must_check"],
+            ["acceptance-criteria"],
+        )
+        self.assertEqual(
+            resolved.data["role_focus"]["code-reviewer"]["must_check"],
+            ["security"],
+        )
+
     def test_invalid_profile_catalog_is_rejected(self):
         tempdir, path = write_profiles(
             {

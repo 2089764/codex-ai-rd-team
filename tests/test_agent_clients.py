@@ -15,7 +15,7 @@ class AgentClientsTests(unittest.TestCase):
             prompt="line1\nline2",
             context={"run_id": "run-1"},
         )
-        self.assertEqual(result, "[analyst] line2")
+        self.assertEqual(result, "DONE: [analyst] line2")
 
     def test_codex_agent_client_reads_last_message_file(self):
         with tempfile.TemporaryDirectory() as tempdir:

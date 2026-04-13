@@ -38,7 +38,11 @@ class ArtifactWriterTests(unittest.TestCase):
 
             def dispatch(self, item, state):
                 self.calls.append(item.item_id)
-                return f"result:{item.item_id}"
+                if item.role == Role.CODE_REVIEWER:
+                    return f"APPROVE: result:{item.item_id}"
+                if item.role == Role.TESTER:
+                    return f"PASS: result:{item.item_id}"
+                return f"DONE: result:{item.item_id}"
 
         class FakeStore:
             def __init__(self):
@@ -87,10 +91,10 @@ class ArtifactWriterTests(unittest.TestCase):
         self.assertEqual(
             writer.calls,
             [
-                ("prd", "result:w1"),
-                ("architecture", "result:w2"),
-                ("api-contracts", "result:w2"),
-                ("review-1", "result:w3"),
+                ("prd", "DONE: result:w1"),
+                ("architecture", "DONE: result:w2"),
+                ("api-contracts", "DONE: result:w2"),
+                ("review-1", "APPROVE: result:w3"),
             ],
         )
         self.assertEqual(
@@ -108,7 +112,11 @@ class ArtifactWriterTests(unittest.TestCase):
 
             def dispatch(self, item, state):
                 self.calls.append(item.item_id)
-                return f"result:{item.item_id}"
+                if item.role == Role.CODE_REVIEWER:
+                    return f"APPROVE: result:{item.item_id}"
+                if item.role == Role.TESTER:
+                    return f"PASS: result:{item.item_id}"
+                return f"DONE: result:{item.item_id}"
 
         class FakeStore:
             def __init__(self):
@@ -154,7 +162,7 @@ class ArtifactWriterTests(unittest.TestCase):
             artifact_writer=writer,
         ).run(state)
 
-        self.assertEqual(writer.calls[0], ("prd", "result:w1"))
+        self.assertEqual(writer.calls[0], ("prd", "DONE: result:w1"))
         self.assertEqual(
             [item.status for item in final_state.queue],
             [WorkStatus.COMPLETED, WorkStatus.COMPLETED],
@@ -172,7 +180,11 @@ class ArtifactWriterTests(unittest.TestCase):
 
             def dispatch(self, item, state):
                 self.calls.append(item.item_id)
-                return f"result:{item.item_id}"
+                if item.role == Role.CODE_REVIEWER:
+                    return f"APPROVE: result:{item.item_id}"
+                if item.role == Role.TESTER:
+                    return f"PASS: result:{item.item_id}"
+                return f"DONE: result:{item.item_id}"
 
         class FakeStore:
             def __init__(self):
@@ -220,8 +232,8 @@ class ArtifactWriterTests(unittest.TestCase):
         self.assertEqual(
             writer.calls,
             [
-                ("review-1", "result:review-1"),
-                ("review-2", "result:review-2"),
+                ("review-1", "APPROVE: result:review-1"),
+                ("review-2", "APPROVE: result:review-2"),
             ],
         )
         self.assertEqual(final_state.status, OrchestrationStatus.COMPLETED)

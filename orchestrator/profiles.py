@@ -17,6 +17,7 @@ ALLOWED_ROLE_FOCUS_KEYS = {
     "tester",
 }
 REQUIRED_RESOLVED_STACK_FIELDS = ("language", "framework", "delivery", "ui")
+ROLE_FOCUS_RULE_KEYS = ("priorities", "must_check", "avoid")
 
 
 class ProfileConfigError(ValueError):
@@ -180,9 +181,9 @@ def _merge_keywords(parent: Any, child: Any) -> list[str]:
     return merged
 
 
-def _merge_role_focus(parent: Any, child: Any) -> dict[str, list[str]]:
+def _merge_role_focus(parent: Any, child: Any) -> dict[str, Any]:
     if parent is None:
-        parent_focus: dict[str, list[str]] = {}
+        parent_focus: dict[str, Any] = {}
     elif isinstance(parent, dict):
         parent_focus = _validate_role_focus_value("role_focus", parent, required=False)
     else:
@@ -194,9 +195,9 @@ def _merge_role_focus(parent: Any, child: Any) -> dict[str, list[str]]:
         raise ProfileConfigError("role_focus must be an object")
 
     child_focus = _validate_role_focus_value("role_focus", child, required=False)
-    merged: dict[str, list[str]] = deepcopy(parent_focus)
+    merged: dict[str, Any] = deepcopy(parent_focus)
     for key, values in child_focus.items():
-        merged[key] = _merge_string_lists(merged.get(key, []), values)
+        merged[key] = _merge_role_focus_rule(merged.get(key), values)
     return merged
 
 
@@ -206,6 +207,46 @@ def _merge_string_lists(parent: list[str], child: list[str]) -> list[str]:
         if item not in merged:
             merged.append(item)
     return merged
+
+
+def _merge_role_focus_rule(parent: Any, child: Any) -> Any:
+    if parent is None:
+        return deepcopy(child)
+
+    if isinstance(parent, list) and isinstance(child, list):
+        return _merge_string_lists(parent, child)
+
+    parent_obj = _role_focus_rule_to_mapping(parent)
+    child_obj = _role_focus_rule_to_mapping(child)
+    merged: dict[str, list[str]] = {}
+    for key in ROLE_FOCUS_RULE_KEYS:
+        parent_values = parent_obj.get(key, [])
+        child_values = child_obj.get(key, [])
+        merged_values = _merge_string_lists(parent_values, child_values)
+        if merged_values:
+            merged[key] = merged_values
+    return merged
+
+
+def _role_focus_rule_to_mapping(value: Any) -> dict[str, list[str]]:
+    if isinstance(value, list):
+        return {"priorities": list(value)}
+    if not isinstance(value, dict):
+        raise ProfileConfigError("role_focus values must be list[str] or object")
+
+    mapped: dict[str, list[str]] = {}
+    for key, items in value.items():
+        if key not in ROLE_FOCUS_RULE_KEYS:
+            raise ProfileConfigError(
+                f"role_focus nested key '{key}' is not allowed; expected one of {ROLE_FOCUS_RULE_KEYS}"
+            )
+        if not isinstance(items, list) or any(not isinstance(item, str) for item in items):
+            raise ProfileConfigError(
+                f"role_focus.{key} must be a list of strings"
+            )
+        if items:
+            mapped[key] = list(items)
+    return mapped
 
 
 def _validate_profile_shape(name: str, profile: dict[str, Any]) -> None:
@@ -280,26 +321,49 @@ def _validate_role_focus_value(
     value: Any,
     *,
     required: bool,
-) -> dict[str, list[str]]:
+) -> dict[str, Any]:
     if not isinstance(value, dict):
         raise ProfileConfigError(f"profile '{name}' role_focus must be an object")
 
-    validated: dict[str, list[str]] = {}
-    for key, items in value.items():
+    validated: dict[str, Any] = {}
+    for key, raw_rule in value.items():
         if not isinstance(key, str) or not key.strip():
             raise ProfileConfigError(f"profile '{name}' role_focus keys must be non-empty strings")
         if key not in ALLOWED_ROLE_FOCUS_KEYS:
             raise ProfileConfigError(
                 f"profile '{name}' role_focus key '{key}' is not one of the allowed roles"
             )
-        if not isinstance(items, list) or any(not isinstance(item, str) for item in items):
-            raise ProfileConfigError(
-                f"profile '{name}' role_focus values must be lists of strings"
-            )
-        validated[key] = list(items)
+        validated[key] = _validate_role_focus_rule(name, key, raw_rule)
     if required and not validated:
         raise ProfileConfigError(f"profile '{name}' must define at least one role_focus entry")
     return validated
+
+
+def _validate_role_focus_rule(profile_name: str, role_key: str, raw_rule: Any) -> Any:
+    if isinstance(raw_rule, list):
+        if any(not isinstance(item, str) for item in raw_rule):
+            raise ProfileConfigError(
+                f"profile '{profile_name}' role_focus values must be lists of strings"
+            )
+        return list(raw_rule)
+
+    if not isinstance(raw_rule, dict):
+        raise ProfileConfigError(
+            f"profile '{profile_name}' role_focus for '{role_key}' must be list[str] or object"
+        )
+
+    validated_rule: dict[str, list[str]] = {}
+    for key, items in raw_rule.items():
+        if key not in ROLE_FOCUS_RULE_KEYS:
+            raise ProfileConfigError(
+                f"profile '{profile_name}' role_focus.{role_key} key '{key}' is not allowed"
+            )
+        if not isinstance(items, list) or any(not isinstance(item, str) for item in items):
+            raise ProfileConfigError(
+                f"profile '{profile_name}' role_focus.{role_key}.{key} must be list[str]"
+            )
+        validated_rule[key] = list(items)
+    return validated_rule
 
 
 def _validate_extends_graph(catalog: dict[str, dict[str, Any]]) -> None:

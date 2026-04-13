@@ -29,6 +29,9 @@ class CliE2ETests(unittest.TestCase):
             self.assertEqual(exit_code, 0, output)
             self.assertIn("status=completed", output.lower())
             self.assertIn("profile=go-kratos-api", output)
+            self.assertIn("attempts=", output)
+            self.assertIn("feedback_retries=", output)
+            self.assertIn("retried_items=", output)
 
             files = list(Path(tempdir).glob("*.json"))
             self.assertTrue(files)

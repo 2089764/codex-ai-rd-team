@@ -27,12 +27,17 @@ except ModuleNotFoundError:  # pragma: no cover
 
 def _build_prompt_renderer(prompts: dict[str, str]):
     def renderer(item, state) -> str:
+        role_focus = None
+        role_focus_map = state.shared_context.get("role_focus", {})
+        if isinstance(role_focus_map, dict):
+            role_focus = role_focus_map.get(item.role.value)
         return render_role_prompt(
             role=item.role,
             objective=state.objective,
             instructions=item.instructions,
             profile_name=state.profile_name,
             prompts=prompts,
+            role_focus=role_focus,
         )
 
     return renderer
@@ -105,7 +110,10 @@ def run_orchestration(
         queue=queue,
         shared_context={
             "mode": mode,
+            "project_type": resolved.name,
+            "effective_profile": resolved.name,
             "resolved_stack": resolved.data.get("resolved_stack", {}),
+            "role_focus": resolved.data.get("role_focus", {}),
         },
     )
 
@@ -132,9 +140,14 @@ def run_orchestration(
     )
 
     final_state = coordinator.run(state)
+    metrics = final_state.shared_context.get("run_metrics", {})
+    attempts = metrics.get("total_attempts", 0)
+    feedback_retries = metrics.get("feedback_retries", 0)
+    retried_items = metrics.get("retried_items", 0)
     print(
         f"run_id={final_state.run_id} mode={mode} profile={final_state.profile_name} "
-        f"status={final_state.status.value} steps={final_state.step_cursor}"
+        f"status={final_state.status.value} steps={final_state.step_cursor} "
+        f"attempts={attempts} feedback_retries={feedback_retries} retried_items={retried_items}"
     )
     return 0 if final_state.status.value == "completed" else 1
 

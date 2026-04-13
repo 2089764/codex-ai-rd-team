@@ -63,7 +63,7 @@ class CoordinatorRecoveryTests(unittest.TestCase):
                     WorkItem(item_id="w2", role=Role.BACKEND_DEV, title="b", instructions="b"),
                 ],
             )
-            dispatcher = SequencedDispatcher({"w1": ["analysis"], "w2": ["done:w2"]})
+            dispatcher = SequencedDispatcher({"w1": ["DONE: analysis"], "w2": ["DONE: w2"]})
             store = FakeStore()
 
             final_state = Coordinator(
@@ -106,7 +106,7 @@ class CoordinatorRecoveryTests(unittest.TestCase):
                     WorkItem(item_id="w2", role=Role.BACKEND_DEV, title="b", instructions="b"),
                 ],
             )
-            dispatcher = SequencedDispatcher({"w1": ["analysis"], "w2": ["done:w2"]})
+            dispatcher = SequencedDispatcher({"w1": ["DONE: analysis"], "w2": ["DONE: w2"]})
             store = FakeStore()
 
             final_state = Coordinator(

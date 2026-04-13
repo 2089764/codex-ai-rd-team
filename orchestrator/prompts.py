@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from typing import Any
 
 from orchestrator.runtime_models import Role
 
@@ -42,17 +43,20 @@ def render_role_prompt(
     instructions: str,
     profile_name: str,
     prompts: dict[str, str],
+    role_focus: Any = None,
 ) -> str:
     template = prompts.get(role.value)
     if not template:
         raise PromptConfigError(f"missing prompt template for role: {role.value}")
 
+    focus_block = _render_role_focus(role_focus)
     return (
         f"{template}\n\n"
         f"[Context]\n"
         f"Profile: {profile_name}\n"
         f"Objective: {objective}\n"
         f"Task: {instructions}\n"
+        f"{focus_block}"
     )
 
 
@@ -67,3 +71,37 @@ def render_coordinator_prompt(*, objective: str, profile_name: str, prompts: dic
         f"Profile: {profile_name}\n"
         f"Objective: {objective}\n"
     )
+
+
+def _render_role_focus(role_focus: Any) -> str:
+    if role_focus is None:
+        return ""
+    if isinstance(role_focus, list):
+        items = [item for item in role_focus if isinstance(item, str) and item.strip()]
+        if not items:
+            return ""
+        lines = "\n".join(f"- {item}" for item in items)
+        return f"RoleFocus.Priorities:\n{lines}\n"
+    if not isinstance(role_focus, dict):
+        return ""
+
+    sections: list[tuple[str, list[str]]] = []
+    for key, label in (
+        ("priorities", "RoleFocus.Priorities"),
+        ("must_check", "RoleFocus.MustCheck"),
+        ("avoid", "RoleFocus.Avoid"),
+    ):
+        value = role_focus.get(key, [])
+        if not isinstance(value, list):
+            continue
+        items = [item for item in value if isinstance(item, str) and item.strip()]
+        if items:
+            sections.append((label, items))
+
+    if not sections:
+        return ""
+
+    rendered_sections = []
+    for label, items in sections:
+        rendered_sections.append(f"{label}:\n" + "\n".join(f"- {item}" for item in items))
+    return "\n".join(rendered_sections) + "\n"

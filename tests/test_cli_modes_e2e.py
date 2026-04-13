@@ -54,6 +54,8 @@ class CliModeE2ETests(unittest.TestCase):
 
             state = self._load_runtime_state(Path(tempdir.name))
             self.assertEqual(state["shared_context"]["mode"], "feature")
+            self.assertEqual(state["shared_context"]["project_type"], "generic")
+            self.assertEqual(state["shared_context"]["effective_profile"], "generic")
             self.assertEqual(
                 [item["role"] for item in state["queue"]],
                 [
@@ -77,6 +79,8 @@ class CliModeE2ETests(unittest.TestCase):
 
             state = self._load_runtime_state(Path(tempdir.name))
             self.assertEqual(state["shared_context"]["mode"], "refactor")
+            self.assertEqual(state["shared_context"]["project_type"], "generic")
+            self.assertEqual(state["shared_context"]["effective_profile"], "generic")
         finally:
             tempdir.cleanup()
 
